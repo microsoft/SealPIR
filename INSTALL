@@ -1,0 +1,2 @@
+When using with SEAL v2.3.0-4 you need to first apply the patch `SEAL_v2.3.0-4.patch' to SEAL.
+To build SealPIR, simply run `make'. It expects SEAL v2.3.0-4 to be installed in ../SEAL.

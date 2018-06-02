@@ -1,0 +1,1766 @@
+From 28d51756e680470bd81cbd1932dc9fef656aa590 Mon Sep 17 00:00:00 2001
+From: Kim Laine <kim.laine@microsoft.com>
+Date: Mon, 4 Dec 2017 16:09:56 -0800
+Subject: [PATCH 1/2] Explosed generic Galois automorphisms in public API
+
+---
+ SEAL/seal/evaluator.cpp                 |   5 +
+ SEAL/seal/evaluator.h                   | 181 ++++++++++++++++++++++++++------
+ SEAL/seal/keygenerator.cpp              |   8 --
+ SEAL/seal/keygenerator.h                |  40 ++++---
+ SEALNET/sealnet/EvaluatorWrapper.cpp    | 146 ++++++++++++++++++++++++++
+ SEALNET/sealnet/EvaluatorWrapper.h      | 157 ++++++++++++++++++++++++---
+ SEALNET/sealnet/KeyGeneratorWrapper.cpp |  33 ++++++
+ SEALNET/sealnet/KeyGeneratorWrapper.h   |  35 ++++++
+ SEALNETTest/EvaluatorWrapper.cs         |  82 +++++++++++++++
+ SEALNETTest/KeyGeneratorWrapper.cs      | 147 ++++++++++++++++++++++++++
+ SEALTest/evaluator.cpp                  |  79 ++++++++++++++
+ SEALTest/keygenerator.cpp               | 146 ++++++++++++++++++++++++++
+ 12 files changed, 990 insertions(+), 69 deletions(-)
+
+diff --git a/SEAL/seal/evaluator.cpp b/SEAL/seal/evaluator.cpp
+index 4c939c3..e9c5932 100644
+--- a/SEAL/seal/evaluator.cpp
++++ b/SEAL/seal/evaluator.cpp
+@@ -1791,6 +1791,11 @@ namespace seal
+ 
+     void Evaluator::rotate_rows(Ciphertext &encrypted, int steps, const GaloisKeys &galois_keys, const MemoryPoolHandle &pool)
+     {
++        if (!qualifiers_.enable_batching)
++        {
++            throw logic_error("encryption parameters do not support batching");
++        }
++
+         // Is there anything to do?
+         if (steps == 0)
+         {
+diff --git a/SEAL/seal/evaluator.h b/SEAL/seal/evaluator.h
+index 502040c..2d5ab04 100644
+--- a/SEAL/seal/evaluator.h
++++ b/SEAL/seal/evaluator.h
+@@ -894,13 +894,136 @@ namespace seal
+         @throws std::invalid_argument if plain_ntt is zero
+         @throws std::logic_error if destination_ntt is aliased and needs to be reallocated
+         */
+-        inline void multiply_plain_ntt(const Ciphertext &encrypted_ntt, const Plaintext &plain_ntt, 
+-            Ciphertext &destination_ntt)
++        inline void multiply_plain_ntt(const Ciphertext &encrypted_ntt, 
++            const Plaintext &plain_ntt, Ciphertext &destination_ntt)
+         {
+             destination_ntt = encrypted_ntt;
+             multiply_plain_ntt(destination_ntt, plain_ntt);
+         }
+ 
++        /**
++        Applies a Galois automorphism to a ciphertext. To evaluate the Galois automorphism,
++        an appropriate set of Galois keys must also be provided. Dynamic memory allocations 
++        in the process are allocated from the memory pool pointed to by the given 
++        MemoryPoolHandle.
++        
++        The desired Galois automorphism is given as a Galois element, and must be an odd 
++        integer in the interval [1, M-1], where M = 2*N, and N = degree(poly_modulus). Used
++        with batching, a Galois element 3^i % M corresponds to a cyclic row rotation i steps 
++        to the left, and a Galois element 3^(N/2-i) % M corresponds to a cyclic row rotation
++        i steps to the right. The Galois element M-1 corresponds to a column rotation (row
++        swap). In the polynomial view (not batching), a Galois automorphism by a Galois
++        element p changes Enc(plain(x)) to Enc(plain(x^p)).
++
++        @param[in] encrypted The ciphertext to apply the Galois automorphism to
++        @param[in] galois_elt The Galois element
++        @param[in] galois_keys The Galois keys
++        @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
++        @throws std::invalid_argument if encrypted or galois_keys is not valid for the
++        encryption parameters
++        @throws std::invalid_argument if encrypted has size greater than two
++        @throws std::invalid_argument if the Galois element is not valid
++        @throws std::invalid_argument if necessary Galois keys are not present
++        @throws std::invalid_argument if pool is uninitialized
++        */
++        void apply_galois(Ciphertext &encrypted, std::uint64_t galois_elt, 
++            const GaloisKeys &galois_keys, const MemoryPoolHandle &pool);
++
++        /**
++        Applies a Galois automorphism to a ciphertext. To evaluate the Galois automorphism,
++        an appropriate set of Galois keys must also be provided. Dynamic memory allocations
++        in the process are allocated from the memory pool pointed to by the local
++        MemoryPoolHandle.
++
++        The desired Galois automorphism is given as a Galois element, and must be an odd
++        integer in the interval [1, M-1], where M = 2*N, and N = degree(poly_modulus). Used
++        with batching, a Galois element 3^i % M corresponds to a cyclic row rotation i steps
++        to the left, and a Galois element 3^(N/2-i) % M corresponds to a cyclic row rotation
++        i steps to the right. The Galois element M-1 corresponds to a column rotation (row
++        swap). In the polynomial view (not batching), a Galois automorphism by a Galois
++        element p changes Enc(plain(x)) to Enc(plain(x^p)).
++
++        @param[in] encrypted The ciphertext to apply the Galois automorphism to
++        @param[in] galois_elt The Galois element
++        @param[in] galois_keys The Galois keys
++        @throws std::invalid_argument if encrypted or galois_keys is not valid for the
++        encryption parameters
++        @throws std::invalid_argument if encrypted has size greater than two
++        @throws std::invalid_argument if the Galois element is not valid
++        @throws std::invalid_argument if necessary Galois keys are not present
++        */
++        inline void apply_galois(Ciphertext &encrypted, std::uint64_t galois_elt, 
++            const GaloisKeys &galois_keys)
++        {
++            apply_galois(encrypted, galois_elt, galois_keys, pool_);
++        }
++
++        /**
++        Applies a Galois automorphism to a ciphertext and writes the result to the
++        destination parameter. To evaluate the Galois automorphism, an appropriate set of 
++        Galois keys must also be provided. Dynamic memory allocations in the process are 
++        allocated from the memory pool pointed to by the given MemoryPoolHandle.
++
++        The desired Galois automorphism is given as a Galois element, and must be an odd
++        integer in the interval [1, M-1], where M = 2*N, and N = degree(poly_modulus). Used
++        with batching, a Galois element 3^i % M corresponds to a cyclic row rotation i steps
++        to the left, and a Galois element 3^(N/2-i) % M corresponds to a cyclic row rotation
++        i steps to the right. The Galois element M-1 corresponds to a column rotation (row
++        swap). In the polynomial view (not batching), a Galois automorphism by a Galois
++        element p changes Enc(plain(x)) to Enc(plain(x^p)).
++
++        @param[in] encrypted The ciphertext to apply the Galois automorphism to
++        @param[in] galois_elt The Galois element
++        @param[in] galois_keys The Galois keys
++        @param[out] destination The ciphertext to overwrite with the result
++        @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
++        @throws std::invalid_argument if encrypted or galois_keys is not valid for the
++        encryption parameters
++        @throws std::invalid_argument if encrypted has size greater than two
++        @throws std::invalid_argument if the Galois element is not valid
++        @throws std::invalid_argument if necessary Galois keys are not present
++        @throws std::logic_error if destination is aliased and needs to be reallocated
++        @throws std::invalid_argument if pool is uninitialized
++        */
++        inline void apply_galois(const Ciphertext &encrypted, std::uint64_t galois_elt,
++            const GaloisKeys &galois_keys, Ciphertext &destination, 
++            const MemoryPoolHandle &pool)
++        {
++            destination = encrypted;
++            apply_galois(destination, galois_elt, galois_keys, pool);
++        }
++
++        /**
++        Applies a Galois automorphism to a ciphertext and writes the result to the
++        destination parameter. To evaluate the Galois automorphism, an appropriate set of
++        Galois keys must also be provided. Dynamic memory allocations in the process are
++        allocated from the memory pool pointed to by the local MemoryPoolHandle.
++
++        The desired Galois automorphism is given as a Galois element, and must be an odd
++        integer in the interval [1, M-1], where M = 2*N, and N = degree(poly_modulus). Used
++        with batching, a Galois element 3^i % M corresponds to a cyclic row rotation i steps
++        to the left, and a Galois element 3^(N/2-i) % M corresponds to a cyclic row rotation
++        i steps to the right. The Galois element M-1 corresponds to a column rotation (row
++        swap). In the polynomial view (not batching), a Galois automorphism by a Galois
++        element p changes Enc(plain(x)) to Enc(plain(x^p)).
++
++        @param[in] encrypted The ciphertext to apply the Galois automorphism to
++        @param[in] galois_elt The Galois element
++        @param[in] galois_keys The Galois keys
++        @param[out] destination The ciphertext to overwrite with the result
++        @throws std::invalid_argument if encrypted or galois_keys is not valid for the
++        encryption parameters
++        @throws std::invalid_argument if encrypted has size greater than two
++        @throws std::invalid_argument if the Galois element is not valid
++        @throws std::invalid_argument if necessary Galois keys are not present
++        @throws std::logic_error if destination is aliased and needs to be reallocated
++        */
++        inline void apply_galois(const Ciphertext &encrypted, std::uint64_t galois_elt,
++            const GaloisKeys &galois_keys, Ciphertext &destination)
++        {
++            apply_galois(encrypted, galois_elt, galois_keys, destination, pool_);
++        }
++
+         /**
+         Rotates plaintext matrix rows cyclically. When batching is used, this function rotates
+         the encrypted plaintext matrix rows cyclically to the left (steps > 0) or to the right
+@@ -913,6 +1036,7 @@ namespace seal
+         @param[in] steps The number of steps to rotate (negative left, positive right)
+         @param[in] galois_keys The Galois keys
+         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+@@ -934,13 +1058,15 @@ namespace seal
+         @param[in] encrypted The ciphertext to rotate
+         @param[in] steps The number of steps to rotate (negative left, positive right)
+         @param[in] galois_keys The Galois keys
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+         @throws std::invalid_argument if steps has too big absolute value
+         @throws std::invalid_argument if necessary Galois keys are not present
+         */
+-        inline void rotate_rows(Ciphertext &encrypted, int steps, const GaloisKeys &galois_keys)
++        inline void rotate_rows(Ciphertext &encrypted, int steps, 
++            const GaloisKeys &galois_keys)
+         {
+             rotate_rows(encrypted, steps, galois_keys, pool_);
+         }
+@@ -959,6 +1085,7 @@ namespace seal
+         @param[in] galois_keys The Galois keys
+         @param[out] destination The ciphertext to overwrite with the rotated result
+         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+@@ -968,7 +1095,8 @@ namespace seal
+         @throws std::invalid_argument if pool is uninitialized
+         */
+         inline void rotate_rows(const Ciphertext &encrypted, int steps, 
+-            const GaloisKeys &galois_keys, Ciphertext &destination, const MemoryPoolHandle &pool)
++            const GaloisKeys &galois_keys, Ciphertext &destination, 
++            const MemoryPoolHandle &pool)
+         {
+             destination = encrypted;
+             rotate_rows(destination, steps, galois_keys, pool);
+@@ -987,6 +1115,7 @@ namespace seal
+         @param[in] steps The number of steps to rotate (negative left, positive right)
+         @param[in] galois_keys The Galois keys
+         @param[out] destination The ciphertext to overwrite with the rotated result
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+@@ -1011,6 +1140,7 @@ namespace seal
+         @param[in] galois_keys The Galois keys
+         @param[out] destination The ciphertext to overwrite with the rotated result
+         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+@@ -1021,6 +1151,10 @@ namespace seal
+         inline void rotate_columns(Ciphertext &encrypted, const GaloisKeys &galois_keys, 
+             const MemoryPoolHandle &pool)
+         {
++            if (!qualifiers_.enable_batching)
++            {
++                throw std::logic_error("encryption parameters do not support batching");
++            }
+             std::uint64_t m = (parms_.poly_modulus().coeff_count() - 1) << 1;
+             apply_galois(encrypted, m - 1, galois_keys, pool);
+         }
+@@ -1035,6 +1169,7 @@ namespace seal
+         @param[in] encrypted The ciphertext to rotate
+         @param[in] galois_keys The Galois keys
+         @param[out] destination The ciphertext to overwrite with the rotated result
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+@@ -1058,6 +1193,7 @@ namespace seal
+         @param[in] galois_keys The Galois keys
+         @param[out] destination The ciphertext to overwrite with the rotated result
+         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+@@ -1084,6 +1220,7 @@ namespace seal
+         @param[in] encrypted The ciphertext to rotate
+         @param[in] galois_keys The Galois keys
+         @param[out] destination The ciphertext to overwrite with the rotated result
++        @throws std::logic_error if the encryption parameters do not support batching
+         @throws std::invalid_argument if encrypted or galois_keys is not valid for the
+         encryption parameters
+         @throws std::invalid_argument if encrypted has size greater than two
+@@ -1115,10 +1252,11 @@ namespace seal
+ 
+         Evaluator &operator =(Evaluator &&assign) = delete;
+ 
+-        void relinearize(Ciphertext &encrypted, const EvaluationKeys &evaluation_keys, int destination_size, 
+-            const MemoryPoolHandle &pool);
++        void relinearize(Ciphertext &encrypted, const EvaluationKeys &evaluation_keys, 
++            int destination_size, const MemoryPoolHandle &pool);
+ 
+-        inline void decompose_single_coeff(const std::uint64_t *value, std::uint64_t *destination, const MemoryPoolHandle &pool)
++        inline void decompose_single_coeff(const std::uint64_t *value, 
++            std::uint64_t *destination, const MemoryPoolHandle &pool)
+         {
+ #ifdef SEAL_DEBUG
+             if (value == nullptr)
+@@ -1164,7 +1302,8 @@ namespace seal
+             }
+         }
+ 
+-        inline void decompose(const std::uint64_t *value, std::uint64_t *destination, const MemoryPoolHandle &pool)
++        inline void decompose(const std::uint64_t *value, std::uint64_t *destination, 
++            const MemoryPoolHandle &pool)
+         {
+ #ifdef SEAL_DEBUG
+             if (value == nullptr)
+@@ -1223,32 +1362,6 @@ namespace seal
+ 
+         void populate_Zmstar_to_generator();
+ 
+-        // The apply_galois function applies a Galois automorphism to a ciphertext. 
+-        // It is needed for slot permutations. 
+-        // Input: encryption of M(x) and an integer p such that gcd(p, m) = 1.
+-        // Output: encryption of M(x^p). 
+-        // The function requires certain GaloisKeys and auxiliary data. 
+-        void apply_galois(Ciphertext &encrypted, std::uint64_t galois_elt, const GaloisKeys &evaluation_keys,
+-            const MemoryPoolHandle &pool);
+-
+-        inline void apply_galois(Ciphertext &encrypted, std::uint64_t galois_elt, const GaloisKeys &evaluation_keys)
+-        {
+-            apply_galois(encrypted, galois_elt, evaluation_keys, pool_);
+-        }
+-
+-        inline void apply_galois(const Ciphertext &encrypted, std::uint64_t galois_elt,
+-            const GaloisKeys &evaluation_keys, Ciphertext &destination, const MemoryPoolHandle &pool)
+-        {
+-            destination = encrypted;
+-            apply_galois(destination, galois_elt, evaluation_keys, pool);
+-        }
+-
+-        inline void apply_galois(const Ciphertext &encrypted, std::uint64_t galois_elt,
+-            const GaloisKeys &evaluation_keys, Ciphertext &destination)
+-        {
+-            apply_galois(encrypted, galois_elt, evaluation_keys, destination, pool_);
+-        }
+-
+         MemoryPoolHandle pool_;
+ 
+         EncryptionParameters parms_;
+diff --git a/SEAL/seal/keygenerator.cpp b/SEAL/seal/keygenerator.cpp
+index fa7fd46..ee6338f 100644
+--- a/SEAL/seal/keygenerator.cpp
++++ b/SEAL/seal/keygenerator.cpp
+@@ -293,10 +293,6 @@ namespace seal
+         {
+             throw logic_error("cannot generate galois keys for unspecified secret key");
+         }
+-        if (!qualifiers_.enable_batching)
+-        {
+-            throw logic_error("encryption parameters are not valid for batching");
+-        }
+ 
+         // Check that decomposition_bit_count is in correct interval
+         if (decomposition_bit_count < SEAL_DBC_MIN || decomposition_bit_count > SEAL_DBC_MAX)
+@@ -426,10 +422,6 @@ namespace seal
+         {
+             throw logic_error("cannot generate galois keys for unspecified secret key");
+         }
+-        if (!qualifiers_.enable_batching)
+-        {
+-            throw logic_error("encryption parameters are not valid for batching");
+-        }
+ 
+         // Check that decomposition_bit_count is in correct interval
+         if (decomposition_bit_count < SEAL_DBC_MIN || decomposition_bit_count > SEAL_DBC_MAX)
+diff --git a/SEAL/seal/keygenerator.h b/SEAL/seal/keygenerator.h
+index a702a3e..393aa61 100644
+--- a/SEAL/seal/keygenerator.h
++++ b/SEAL/seal/keygenerator.h
+@@ -99,15 +99,38 @@ namespace seal
+         }
+ 
+         /**
+-        Generates Galois keys.
++        Generates Galois keys. This function creates logarithmically many (in degree of the
++        polynomial modulus) Galois keys that is sufficient to apply any Galois automorphism
++        (e.g. rotations) on encrypted data. Most users will want to use this overload of
++        the function.
+ 
+         @param[in] decomposition_bit_count The decomposition bit count
+         @param[out] galois_keys The Galois keys instance to overwrite with the generated keys
+         @throws std::invalid_argument if decomposition_bit_count is not within [1, 60]
+-        @throws std::logic_error if the encryption parameters do not support batching
+-        */        
++        */
+         void generate_galois_keys(int decomposition_bit_count, GaloisKeys &galois_keys);
+ 
++        /**
++        Generates Galois keys. This function creates specific Galois keys that can be used to
++        apply specific Galois automorphisms on encrypted data. The user needs to give as 
++        input a vector of Galois elements corresponding to the keys that are to be created.
++        
++        The Galois elements are odd integers in the interval [1, M-1], where M = 2*N, and
++        N = degree(poly_modulus). Used with batching, a Galois element 3^i % M corresponds
++        to a cyclic row rotation i steps to the left, and a Galois element 3^(N/2-i) % M
++        corresponds to a cyclic row rotation i steps to the right. The Galois element M-1
++        corresponds to a column rotation (row swap). In the polynomial view (not batching),
++        a Galois automorphism by a Galois element p changes Enc(plain(x)) to Enc(plain(x^p)).
++
++        @param[in] decomposition_bit_count The decomposition bit count
++        @param[in] galois_elts The Galois elements for which to generate keys
++        @param[out] galois_keys The Galois keys instance to overwrite with the generated keys
++        @throws std::invalid_argument if decomposition_bit_count is not within [1, 60]
++        @throws std::invalid_argument if the Galois elements are not valid
++        */
++        void generate_galois_keys(int decomposition_bit_count,
++            const std::vector<std::uint64_t> &galois_elts, GaloisKeys &galois_keys);
++
+     private:
+         KeyGenerator(const KeyGenerator &copy) = delete;
+ 
+@@ -141,17 +164,6 @@ namespace seal
+             return generated_;
+         }
+ 
+-        void generate_galois_keys(int decomposition_bit_count, 
+-            const std::vector<std::uint64_t> &galois_elts, GaloisKeys &galois_keys);
+-
+-        inline GaloisKeys generate_galois_keys(int decomposition_bit_count, 
+-            const std::vector<std::uint64_t> &galois_elts)
+-        {
+-            GaloisKeys keys;
+-            generate_galois_keys(decomposition_bit_count, galois_elts, keys);
+-            return keys;
+-        }
+-
+         MemoryPoolHandle pool_;
+ 
+         EncryptionParameters parms_;
+diff --git a/SEALNET/sealnet/EvaluatorWrapper.cpp b/SEALNET/sealnet/EvaluatorWrapper.cpp
+index b4868ed..648fbfd 100644
+--- a/SEALNET/sealnet/EvaluatorWrapper.cpp
++++ b/SEALNET/sealnet/EvaluatorWrapper.cpp
+@@ -1513,6 +1513,152 @@ namespace Microsoft
+                 }
+             }
+ 
++            void Evaluator::ApplyGalois(Ciphertext ^encrypted, UInt64 galoisElt, GaloisKeys ^galoisKeys)
++            {
++                if (evaluator_ == nullptr)
++                {
++                    throw gcnew ObjectDisposedException("Evaluator is disposed");
++                }
++                if (encrypted == nullptr)
++                {
++                    throw gcnew ArgumentNullException("encrypted cannot be null");
++                }
++                if (galoisKeys == nullptr)
++                {
++                    throw gcnew ArgumentNullException("galoisKeys cannot be null");
++                }
++                try
++                {
++                    evaluator_->apply_galois(encrypted->GetCiphertext(), galoisElt, galoisKeys->GetKeys());
++                    GC::KeepAlive(encrypted);
++                    GC::KeepAlive(galoisKeys);
++                }
++                catch (const exception &e)
++                {
++                    HandleException(&e);
++                }
++                catch (...)
++                {
++                    HandleException(nullptr);
++                }
++            }
++
++            void Evaluator::ApplyGalois(Ciphertext ^encrypted, UInt64 galoisElt, GaloisKeys ^galoisKeys, 
++                MemoryPoolHandle ^pool)
++            {
++                if (evaluator_ == nullptr)
++                {
++                    throw gcnew ObjectDisposedException("Evaluator is disposed");
++                }
++                if (encrypted == nullptr)
++                {
++                    throw gcnew ArgumentNullException("encrypted cannot be null");
++                }
++                if (galoisKeys == nullptr)
++                {
++                    throw gcnew ArgumentNullException("galoisKeys cannot be null");
++                }
++                if (pool == nullptr)
++                {
++                    throw gcnew ArgumentNullException("pool cannot be null");
++                }
++                try
++                {
++                    evaluator_->apply_galois(encrypted->GetCiphertext(), galoisElt, 
++                        galoisKeys->GetKeys(), pool->GetHandle());
++                    GC::KeepAlive(encrypted);
++                    GC::KeepAlive(galoisKeys);
++                    GC::KeepAlive(pool);
++                }
++                catch (const exception &e)
++                {
++                    HandleException(&e);
++                }
++                catch (...)
++                {
++                    HandleException(nullptr);
++                }
++            }
++
++            void Evaluator::ApplyGalois(Ciphertext ^encrypted, UInt64 galoisElt, GaloisKeys ^galoisKeys, 
++                Ciphertext ^destination)
++            {
++                if (evaluator_ == nullptr)
++                {
++                    throw gcnew ObjectDisposedException("Evaluator is disposed");
++                }
++                if (encrypted == nullptr)
++                {
++                    throw gcnew ArgumentNullException("encrypted cannot be null");
++                }
++                if (galoisKeys == nullptr)
++                {
++                    throw gcnew ArgumentNullException("galoisKeys cannot be null");
++                }
++                if (destination == nullptr)
++                {
++                    throw gcnew ArgumentNullException("destination cannot be null");
++                }
++                try
++                {
++                    evaluator_->apply_galois(encrypted->GetCiphertext(), galoisElt,
++                        galoisKeys->GetKeys(), destination->GetCiphertext());
++                    GC::KeepAlive(encrypted);
++                    GC::KeepAlive(galoisKeys);
++                    GC::KeepAlive(destination);
++                }
++                catch (const exception &e)
++                {
++                    HandleException(&e);
++                }
++                catch (...)
++                {
++                    HandleException(nullptr);
++                }
++            }
++
++            void Evaluator::ApplyGalois(Ciphertext ^encrypted, UInt64 galoisElt, GaloisKeys ^galoisKeys, 
++                Ciphertext ^destination, MemoryPoolHandle ^pool)
++            {
++                if (evaluator_ == nullptr)
++                {
++                    throw gcnew ObjectDisposedException("Evaluator is disposed");
++                }
++                if (encrypted == nullptr)
++                {
++                    throw gcnew ArgumentNullException("encrypted cannot be null");
++                }
++                if (galoisKeys == nullptr)
++                {
++                    throw gcnew ArgumentNullException("galoisKeys cannot be null");
++                }
++                if (destination == nullptr)
++                {
++                    throw gcnew ArgumentNullException("destination cannot be null");
++                }
++                if (pool == nullptr)
++                {
++                    throw gcnew ArgumentNullException("pool cannot be null");
++                }
++                try
++                {
++                    evaluator_->apply_galois(encrypted->GetCiphertext(), galoisElt, 
++                        galoisKeys->GetKeys(), destination->GetCiphertext(), pool->GetHandle());
++                    GC::KeepAlive(encrypted);
++                    GC::KeepAlive(galoisKeys);
++                    GC::KeepAlive(destination);
++                    GC::KeepAlive(pool);
++                }
++                catch (const exception &e)
++                {
++                    HandleException(&e);
++                }
++                catch (...)
++                {
++                    HandleException(nullptr);
++                }
++            }
++
+             void Evaluator::RotateRows(Ciphertext ^encrypted, int steps, GaloisKeys ^galoisKeys)
+             {
+                 if (evaluator_ == nullptr)
+diff --git a/SEALNET/sealnet/EvaluatorWrapper.h b/SEALNET/sealnet/EvaluatorWrapper.h
+index 1f99af1..7a7ef05 100644
+--- a/SEALNET/sealnet/EvaluatorWrapper.h
++++ b/SEALNET/sealnet/EvaluatorWrapper.h
+@@ -113,7 +113,7 @@ namespace Microsoft
+                 by the given <see cref="MemoryPoolHandle" />.
+                 </remarks
+                 <param name="context">The SEALContext</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
+                 <exception cref="System::ArgumentException">if encryption parameters are not valid</exception>
+                 <exception cref="System::ArgumentException">if pool is uninitialized</exception>
+                 <exception cref="System::ArgumentNullException">if context or pool is null</exception>
+@@ -256,7 +256,7 @@ namespace Microsoft
+                 </remarks>
+                 <param name="encrypted1">The first ciphertext to multiply</param>
+                 <param name="encrypted2">The second ciphertext to multiply</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
+                 <exception cref="System::ArgumentException">if encrypted1 or encrypted2 is not valid 
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if pool is uninitialized</exception>
+@@ -296,7 +296,7 @@ namespace Microsoft
+                 <param name="encrypted1">The first ciphertext to multiply</param>
+                 <param name="encrypted2">The second ciphertext to multiply</param>
+                 <param name="destination">The ciphertext to overwrite with the multiplication result</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
+                 <exception cref="System::ArgumentException">if encrypted1 or encrypted2 is not valid 
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if pool is uninitialized</exception>
+@@ -330,7 +330,7 @@ namespace Microsoft
+                 the memory pool pointed to by the given <see cref="MemoryPoolHandle" />.
+                 </remarks>
+                 <param name="encrypted">The ciphertext to square</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
+                 <exception cref="System::ArgumentException">if encrypted is not valid for the
+                 encryption parameters</exception>
+                 <exception cref="System::ArgumentNullException">if encrypted or pool is 
+@@ -365,7 +365,7 @@ namespace Microsoft
+                 </remarks>
+                 <param name="encrypted">The ciphertext to square</param>
+                 <param name="destination">The ciphertext to overwrite with the square</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
+                 <exception cref="System::ArgumentException">if encrypted is not valid for the 
+                 encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if pool is uninitialized</exception>
+@@ -385,7 +385,7 @@ namespace Microsoft
+                 </remarks>
+                 <param name="encrypted">The ciphertext to relinearize</param>
+                 <param name="evaluationKeys">The evaluation keys</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
+                 <exception cref="System::ArgumentException">if encrypted or evaluationKeys is not 
+                 valid for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if the size of evaluationKeys is too 
+@@ -450,7 +450,7 @@ namespace Microsoft
+                 <param name="encrypted">The ciphertext to relinearize</param>
+                 <param name="evaluationKeys">The evaluation keys</param>
+                 <param name="destination">The ciphertext to overwrite with the relinearized result</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
+                 <exception cref="System::ArgumentException">if encrypted or evaluationKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if the size of evaluationKeys is too
+@@ -1024,6 +1024,121 @@ namespace Microsoft
+                 */
+                 void MultiplyPlainNTT(Ciphertext ^encryptedNTT, Plaintext ^plainNTT);
+ 
++                /**
++                <summary>Applies a Galois automorphism to a ciphertext.</summary>
++
++                <remarks>
++                Applies a Galois automorphism to a ciphertext. To evaluate the Galois automorphism,
++                an appropriate set of Galois keys must also be provided. Dynamic memory allocations
++                in the process are allocated from the memory pool pointed to by the local
++                <see cref="MemoryPoolHandle" />.
++                </remarks>
++                <param name="encrypted">The ciphertext to apply the Galois automorphism to</param>
++                <param name="galoisElt">The Galois element</param>
++                <param name="galoisKeys">The Galois keys</param>
++                <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
++                for the encryption parameters</exception>
++                <exception cref="System::ArgumentException">if encrypted has size greater than
++                two</exception>
++                <exception cref="System::ArgumentException">if the Galois element is not
++                valid</exception>
++                <exception cref="System::ArgumentException">if necessary Galois keys are not
++                present</exception>
++                <exception cref="System::ArgumentNullException">if encrypted or galoisKeys is
++                null</exception>
++                */
++                void ApplyGalois(Ciphertext ^encrypted, System::UInt64 galoisElt,
++                    GaloisKeys ^galoisKeys);
++
++                /**
++                <summary>Applies a Galois automorphism to a ciphertext.</summary>
++
++                <remarks>
++                Applies a Galois automorphism to a ciphertext. To evaluate the Galois automorphism,
++                an appropriate set of Galois keys must also be provided. Dynamic memory allocations
++                in the process are allocated from the memory pool pointed to by the given
++                <see cref="MemoryPoolHandle" />.
++                </remarks>
++                <param name="encrypted">The ciphertext to apply the Galois automorphism to</param>
++                <param name="galoisElt">The Galois element</param>
++                <param name="galoisKeys">The Galois keys</param>
++                <param name="destination">The 
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
++                <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
++                for the encryption parameters</exception>
++                <exception cref="System::ArgumentException">if encrypted has size greater than
++                two</exception>
++                <exception cref="System::ArgumentException">if the Galois element is not 
++                valid</exception>
++                <exception cref="System::ArgumentException">if necessary Galois keys are not
++                present</exception>
++                <exception cref="System::ArgumentException">if pool is uninitialized</exception>
++                <exception cref="System::ArgumentNullException">if encrypted, galoisKeys or pool
++                is null</exception>
++                */
++                void ApplyGalois(Ciphertext ^encrypted, System::UInt64 galoisElt,
++                    GaloisKeys ^galoisKeys, MemoryPoolHandle ^pool);
++
++                /**
++                <summary>Applies a Galois automorphism to a ciphertext and writes the result
++                to the destination parameter.</summary>
++
++                <remarks>
++                Applies a Galois automorphism to a ciphertext and writes the result to the
++                destination parameter. To evaluate the Galois automorphism, an appropriate
++                set of Galois keys must also be provided. Dynamic memory allocations in the
++                process are allocated from the memory pool pointed to by the local
++                <see cref="MemoryPoolHandle" />.
++                </remarks>
++                <param name="encrypted">The ciphertext to apply the Galois automorphism to</param>
++                <param name="galoisElt">The Galois element</param>
++                <param name="galoisKeys">The Galois keys</param>
++                <param name="destination">The ciphertext to overwrite with the result</param>
++                <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
++                for the encryption parameters</exception>
++                <exception cref="System::ArgumentException">if encrypted has size greater than
++                two</exception>
++                <exception cref="System::ArgumentException">if the Galois element is not
++                valid</exception>
++                <exception cref="System::ArgumentException">if necessary Galois keys are not
++                present</exception>
++                <exception cref="System::ArgumentNullException">if encrypted, galoisKeys, or
++                destination is null</exception>
++                */
++                void ApplyGalois(Ciphertext ^encrypted, System::UInt64 galoisElt,
++                    GaloisKeys ^galoisKeys, Ciphertext ^destination);
++
++                /**
++                <summary>Applies a Galois automorphism to a ciphertext and writes the result
++                to the destination parameter.</summary>
++
++                <remarks>
++                Applies a Galois automorphism to a ciphertext and writes the result to the
++                destination parameter. To evaluate the Galois automorphism, an appropriate 
++                set of Galois keys must also be provided. Dynamic memory allocations in the 
++                process are allocated from the memory pool pointed to by the given
++                <see cref="MemoryPoolHandle" />.
++                </remarks>
++                <param name="encrypted">The ciphertext to apply the Galois automorphism to</param>
++                <param name="galoisElt">The Galois element</param>
++                <param name="galoisKeys">The Galois keys</param>
++                <param name="destination">The ciphertext to overwrite with the result</param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
++                <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
++                for the encryption parameters</exception>
++                <exception cref="System::ArgumentException">if encrypted has size greater than
++                two</exception>
++                <exception cref="System::ArgumentException">if the Galois element is not
++                valid</exception>
++                <exception cref="System::ArgumentException">if necessary Galois keys are not
++                present</exception>
++                <exception cref="System::ArgumentException">if pool is uninitialized</exception>
++                <exception cref="System::ArgumentNullException">if encrypted, galoisKeys, 
++                destination, or pool is null</exception>
++                */
++                void ApplyGalois(Ciphertext ^encrypted, System::UInt64 galoisElt,
++                    GaloisKeys ^galoisKeys, Ciphertext ^destination, MemoryPoolHandle ^pool);
++
+                 /**
+                 <summary>Rotates plaintext matrix rows cyclically.</summary>
+ 
+@@ -1038,6 +1153,8 @@ namespace Microsoft
+                 <param name="encrypted">The ciphertext to rotate</param>
+                 <param name="steps">The number of steps to rotate (negative left, positive right)</param>
+                 <param name="galoisKeys">The Galois keys</param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if encrypted has size greater than 
+@@ -1046,7 +1163,7 @@ namespace Microsoft
+                 value</exception>
+                 <exception cref="System::ArgumentException">if necessary Galois keys are not
+                 present</exception>
+-                <exception cref="System::ArgumentNullException">if encrypted, galoisKeys or pool
++                <exception cref="System::ArgumentNullException">if encrypted, galoisKeys, or pool
+                 is null</exception>
+                 */
+                 void RotateRows(Ciphertext ^encrypted, int steps, GaloisKeys ^galoisKeys);
+@@ -1065,7 +1182,9 @@ namespace Microsoft
+                 <param name="encrypted">The ciphertext to rotate</param>
+                 <param name="steps">The number of steps to rotate (negative left, positive right)</param>
+                 <param name="galoisKeys">The Galois keys</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if encrypted has size greater than 
+@@ -1075,7 +1194,7 @@ namespace Microsoft
+                 <exception cref="System::ArgumentException">if necessary Galois keys are not
+                 present</exception>
+                 <exception cref="System::ArgumentException">if pool is uninitialized</exception>
+-                <exception cref="System::ArgumentNullException">if encrypted, galoisKeys or pool
++                <exception cref="System::ArgumentNullException">if encrypted, galoisKeys, or pool
+                 is null</exception>
+                 */
+                 void RotateRows(Ciphertext ^encrypted, int steps, GaloisKeys ^galoisKeys, 
+@@ -1097,6 +1216,8 @@ namespace Microsoft
+                 <param name="steps">The number of steps to rotate (negative left, positive right)</param>
+                 <param name="galoisKeys">The Galois keys</param>
+                 <param name="destination">The ciphertext to overwrite with the rotated result</param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if encrypted has size greater than 
+@@ -1127,7 +1248,9 @@ namespace Microsoft
+                 <param name="steps">The number of steps to rotate (negative left, positive right)</param>
+                 <param name="galoisKeys">The Galois keys</param>
+                 <param name="destination">The ciphertext to overwrite with the rotated result</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if encrypted has size greater than 
+@@ -1156,6 +1279,8 @@ namespace Microsoft
+                 </remarks>
+                 <param name="encrypted">The ciphertext to rotate</param>
+                 <param name="galoisKeys">The Galois keys</param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if encrypted has size greater than 
+@@ -1180,7 +1305,9 @@ namespace Microsoft
+                 </remarks>
+                 <param name="encrypted">The ciphertext to rotate</param>
+                 <param name="galoisKeys">The Galois keys</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if encrypted has size greater than 
+@@ -1208,6 +1335,8 @@ namespace Microsoft
+                 <param name="encrypted">The ciphertext to rotate</param>
+                 <param name="galoisKeys">The Galois keys</param>
+                 <param name="destination">The ciphertext to overwrite with the rotated result</param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if encrypted has size greater than 
+@@ -1234,7 +1363,9 @@ namespace Microsoft
+                 <param name="encrypted">The ciphertext to rotate</param>
+                 <param name="galoisKeys">The Galois keys</param>
+                 <param name="destination">The ciphertext to overwrite with the rotated result</param>
+-                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool/param>
++                <param name="pool">The MemoryPoolHandle pointing to a valid memory pool</param>
++                <exception cref="System::InvalidOperationException">if the encryption parameters do
++                not support batching</exception>
+                 <exception cref="System::ArgumentException">if encrypted or galoisKeys is not valid
+                 for the encryption parameters</exception>
+                 <exception cref="System::ArgumentException">if necessary Galois keys are not
+diff --git a/SEALNET/sealnet/KeyGeneratorWrapper.cpp b/SEALNET/sealnet/KeyGeneratorWrapper.cpp
+index c9d52de..e1547f1 100644
+--- a/SEALNET/sealnet/KeyGeneratorWrapper.cpp
++++ b/SEALNET/sealnet/KeyGeneratorWrapper.cpp
+@@ -1,10 +1,12 @@
+ #include <cstddef>
++#include <vector>
+ #include "sealnet/KeyGeneratorWrapper.h"
+ #include "sealnet/BigPolyWrapper.h"
+ #include "sealnet/BigUIntWrapper.h"
+ #include "sealnet/Common.h"
+ 
+ using namespace System;
++using namespace System::Collections::Generic;
+ using namespace std;
+ 
+ namespace Microsoft
+@@ -205,6 +207,37 @@ namespace Microsoft
+                 }
+             }
+ 
++            void KeyGenerator::GenerateGaloisKeys(int decompositionBitCount, List<UInt64> ^galoisElts,
++                GaloisKeys ^galoisKeys)
++            {
++                if (generator_ == nullptr)
++                {
++                    throw gcnew ObjectDisposedException("KeyGenerator is disposed");
++                }
++                if (galoisKeys == nullptr)
++                {
++                    throw gcnew ArgumentNullException("galoisKeys cannot be null");
++                }
++                try
++                {
++                    std::vector<std::uint64_t> v_galois_elts;
++                    for (int i = 0; i < galoisElts->Count; i++)
++                    {
++                        v_galois_elts.push_back(galoisElts[i]);
++                    }
++                    generator_->generate_galois_keys(decompositionBitCount, v_galois_elts, galoisKeys->GetKeys());
++                    GC::KeepAlive(galoisElts);
++                }
++                catch (const exception &e)
++                {
++                    HandleException(&e);
++                }
++                catch (...)
++                {
++                    HandleException(nullptr);
++                }
++            }
++
+             Microsoft::Research::SEAL::PublicKey ^KeyGenerator::PublicKey::get()
+             {
+                 if (generator_ == nullptr)
+diff --git a/SEALNET/sealnet/KeyGeneratorWrapper.h b/SEALNET/sealnet/KeyGeneratorWrapper.h
+index 7fd722c..cf7f1fc 100644
+--- a/SEALNET/sealnet/KeyGeneratorWrapper.h
++++ b/SEALNET/sealnet/KeyGeneratorWrapper.h
+@@ -158,6 +158,12 @@ namespace Microsoft
+                 /**
+                 <summary>Generates Galois keys.</summary>
+ 
++                <remarks>
++                Generates Galois keys. This function creates logarithmically many (in degree of the
++                polynomial modulus) Galois keys that is sufficient to apply any Galois automorphism
++                (e.g. rotations) on encrypted data. Most users will want to use this overload of
++                the function.
++                </remarks>
+                 <param name="decompositionBitCount">The decomposition bit count</param>
+                 <param name="galoisKeys">The Galois keys instance to overwrite with the generated
+                 keys</param>
+@@ -167,6 +173,35 @@ namespace Microsoft
+                 */
+                 void GenerateGaloisKeys(int decompositionBitCount, GaloisKeys ^galoisKeys);
+ 
++                /**
++                <summary>Generates Galois keys.</summary>
++
++                <remarks>
++                Generates Galois keys. This function creates specific Galois keys that can be used to
++                apply specific Galois automorphisms on encrypted data. The user needs to give as
++                input a vector of Galois elements corresponding to the keys that are to be created.
++
++                The Galois elements are odd integers in the interval [1, M-1], where M = 2*N, and
++                N = degree(PolyModulus). Used with batching, a Galois element 3^i % M corresponds 
++                to a cyclic row rotation i steps to the left, and a Galois element 3^(N/2-i) % M 
++                corresponds to a cyclic row rotation i steps to the right. The Galois element M-1 
++                corresponds to a column rotation (row swap). In the polynomial view (not batching), 
++                a Galois automorphism by a Galois element p changes Enc(plain(x)) to Enc(plain(x^p)).
++                </remarks>
++                <param name="decompositionBitCount">The decomposition bit count</param>
++                <param name="galoisElts">The Galois elements for which to generate keys</param>
++                <param name="galoisKeys">The Galois keys instance to overwrite with the generated
++                keys</param>
++                <exception cref="System::ArgumentException">if decompositionBitCount is not
++                within [0, 60]</exception>
++                <exception cref="System::ArgumentException">if the Galois elements are not 
++                valid</exception>
++                <exception cref="System::ArgumentNullException">if galoisKeys is null</exception>
++                */
++                void GenerateGaloisKeys(int decompositionBitCount, 
++                    System::Collections::Generic::List<System::UInt64> ^galoisElts,
++                    GaloisKeys ^galoisKeys);
++
+                 /**
+                 <summary>Destroys the KeyGenerator.</summary>
+                 */
+diff --git a/SEALNETTest/EvaluatorWrapper.cs b/SEALNETTest/EvaluatorWrapper.cs
+index 541786c..4321ecd 100644
+--- a/SEALNETTest/EvaluatorWrapper.cs
++++ b/SEALNETTest/EvaluatorWrapper.cs
+@@ -982,6 +982,88 @@ namespace SEALNETTest
+             Assert.AreEqual(encrypted.HashBlock, parms.HashBlock);
+         }
+ 
++        [TestMethod]
++        public void FVEncryptApplyGaloisDecryptNET()
++        {
++            var parms = new EncryptionParameters();
++            var plain_modulus = new SmallModulus(257);
++            parms.NoiseStandardDeviation = 3.19;
++            parms.PlainModulus = plain_modulus;
++            parms.PolyModulus = "1x^8 + 1";
++            parms.CoeffModulus = new List<SmallModulus> {
++                    DefaultParams.SmallMods40Bit(0), DefaultParams.SmallMods40Bit(1)
++                };
++            var context = new SEALContext(parms);
++            var keygen = new KeyGenerator(context);
++            var glk = new GaloisKeys();
++            keygen.GenerateGaloisKeys(24, new List<UInt64> { 1, 3, 5, 15 }, glk);
++
++            var encryptor = new Encryptor(context, keygen.PublicKey);
++            var evaluator = new Evaluator(context);
++            var decryptor = new Decryptor(context, keygen.SecretKey);
++
++            var plain = new Plaintext("1");
++            var encrypted = new Ciphertext();
++            encryptor.Encrypt(plain, encrypted);
++            evaluator.ApplyGalois(encrypted, 1, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 3, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 5, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 15, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1", plain.ToString());
++
++            plain.Set("1x^1");
++            encryptor.Encrypt(plain, encrypted);
++            evaluator.ApplyGalois(encrypted, 1, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^1", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 3, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^3", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 5, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("100x^7", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 15, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^1", plain.ToString());
++
++            plain.Set("1x^2");
++            encryptor.Encrypt(plain, encrypted);
++            evaluator.ApplyGalois(encrypted, 1, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^2", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 3, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^6", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 5, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("100x^6", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 15, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^2", plain.ToString());
++
++            plain.Set("1x^3 + 2x^2 + 1x^1 + 1");
++            encryptor.Encrypt(plain, encrypted);
++            evaluator.ApplyGalois(encrypted, 1, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^3 + 2x^2 + 1x^1 + 1", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 3, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("2x^6 + 1x^3 + 100x^1 + 1", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 5, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("100x^7 + FFx^6 + 100x^5 + 1", plain.ToString());
++            evaluator.ApplyGalois(encrypted, 15, glk);
++            decryptor.Decrypt(encrypted, plain);
++            Assert.AreEqual("1x^3 + 2x^2 + 1x^1 + 1", plain.ToString());
++        }
++
+         [TestMethod]
+         public void FVEncryptRotateMatrixDecryptNET()
+         {
+diff --git a/SEALNETTest/KeyGeneratorWrapper.cs b/SEALNETTest/KeyGeneratorWrapper.cs
+index 04f9738..2a74a89 100644
+--- a/SEALNETTest/KeyGeneratorWrapper.cs
++++ b/SEALNETTest/KeyGeneratorWrapper.cs
+@@ -1,6 +1,7 @@
+ using Microsoft.VisualStudio.TestTools.UnitTesting;
+ using Microsoft.Research.SEAL;
+ using System.Collections.Generic;
++using System;
+ 
+ namespace SEALNETTest
+ {
+@@ -35,6 +36,79 @@ namespace SEALNETTest
+                 keygen.GenerateEvaluationKeys(2, 2, evk);
+                 Assert.AreEqual(evk.HashBlock, parms.HashBlock);
+                 Assert.AreEqual(60, evk.Key(2)[0].Size);
++
++                var galks = new GaloisKeys();
++                keygen.GenerateGaloisKeys(60, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.AreEqual(2, galks.Key(3)[0].Size);
++                Assert.AreEqual(10, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.AreEqual(4, galks.Key(3)[0].Size);
++                Assert.AreEqual(10, galks.Size);
++
++                keygen.GenerateGaloisKeys(2, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.AreEqual(60, galks.Key(3)[0].Size);
++                Assert.AreEqual(10, galks.Size);
++
++                keygen.GenerateGaloisKeys(60, new List<UInt64> { 1, 3, 5, 7 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(3));
++                Assert.IsTrue(galks.HasKey(5));
++                Assert.IsTrue(galks.HasKey(7));
++                Assert.IsFalse(galks.HasKey(9));
++                Assert.IsFalse(galks.HasKey(127));
++                Assert.AreEqual(2, galks.Key(1)[0].Size);
++                Assert.AreEqual(2, galks.Key(3)[0].Size);
++                Assert.AreEqual(2, galks.Key(5)[0].Size);
++                Assert.AreEqual(2, galks.Key(7)[0].Size);
++                Assert.AreEqual(4, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, new List<UInt64> { 1, 3, 5, 7 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(3));
++                Assert.IsTrue(galks.HasKey(5));
++                Assert.IsTrue(galks.HasKey(7));
++                Assert.IsFalse(galks.HasKey(9));
++                Assert.IsFalse(galks.HasKey(127));
++                Assert.AreEqual(4, galks.Key(1)[0].Size);
++                Assert.AreEqual(4, galks.Key(3)[0].Size);
++                Assert.AreEqual(4, galks.Key(5)[0].Size);
++                Assert.AreEqual(4, galks.Key(7)[0].Size);
++                Assert.AreEqual(4, galks.Size);
++
++                keygen.GenerateGaloisKeys(2, new List<UInt64> { 1, 3, 5, 7 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(3));
++                Assert.IsTrue(galks.HasKey(5));
++                Assert.IsTrue(galks.HasKey(7));
++                Assert.IsFalse(galks.HasKey(9));
++                Assert.IsFalse(galks.HasKey(127));
++                Assert.AreEqual(60, galks.Key(1)[0].Size);
++                Assert.AreEqual(60, galks.Key(3)[0].Size);
++                Assert.AreEqual(60, galks.Key(5)[0].Size);
++                Assert.AreEqual(60, galks.Key(7)[0].Size);
++                Assert.AreEqual(4, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, new List<UInt64> { 1 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsFalse(galks.HasKey(3));
++                Assert.IsFalse(galks.HasKey(127));
++                Assert.AreEqual(4, galks.Key(1)[0].Size);
++                Assert.AreEqual(1, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, new List<UInt64> { 127 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsFalse(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(127));
++                Assert.AreEqual(4, galks.Key(127)[0].Size);
++                Assert.AreEqual(1, galks.Size);
+             }
+             {
+                 parms.NoiseStandardDeviation = 3.19;
+@@ -61,6 +135,79 @@ namespace SEALNETTest
+                 keygen.GenerateEvaluationKeys(4, 1, evk);
+                 Assert.AreEqual(evk.HashBlock, parms.HashBlock);
+                 Assert.AreEqual(30, evk.Key(2)[0].Size);
++
++                var galks = new GaloisKeys();
++                keygen.GenerateGaloisKeys(60, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.AreEqual(2, galks.Key(3)[0].Size);
++                Assert.AreEqual(14, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.AreEqual(4, galks.Key(3)[0].Size);
++                Assert.AreEqual(14, galks.Size);
++
++                keygen.GenerateGaloisKeys(2, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.AreEqual(60, galks.Key(3)[0].Size);
++                Assert.AreEqual(14, galks.Size);
++
++                keygen.GenerateGaloisKeys(60, new List<UInt64> { 1, 3, 5, 7 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(3));
++                Assert.IsTrue(galks.HasKey(5));
++                Assert.IsTrue(galks.HasKey(7));
++                Assert.IsFalse(galks.HasKey(9));
++                Assert.IsFalse(galks.HasKey(511));
++                Assert.AreEqual(2, galks.Key(1)[0].Size);
++                Assert.AreEqual(2, galks.Key(3)[0].Size);
++                Assert.AreEqual(2, galks.Key(5)[0].Size);
++                Assert.AreEqual(2, galks.Key(7)[0].Size);
++                Assert.AreEqual(4, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, new List<UInt64> { 1, 3, 5, 7 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(3));
++                Assert.IsTrue(galks.HasKey(5));
++                Assert.IsTrue(galks.HasKey(7));
++                Assert.IsFalse(galks.HasKey(9));
++                Assert.IsFalse(galks.HasKey(511));
++                Assert.AreEqual(4, galks.Key(1)[0].Size);
++                Assert.AreEqual(4, galks.Key(3)[0].Size);
++                Assert.AreEqual(4, galks.Key(5)[0].Size);
++                Assert.AreEqual(4, galks.Key(7)[0].Size);
++                Assert.AreEqual(4, galks.Size);
++
++                keygen.GenerateGaloisKeys(2, new List<UInt64> { 1, 3, 5, 7 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(3));
++                Assert.IsTrue(galks.HasKey(5));
++                Assert.IsTrue(galks.HasKey(7));
++                Assert.IsFalse(galks.HasKey(9));
++                Assert.IsFalse(galks.HasKey(511));
++                Assert.AreEqual(60, galks.Key(1)[0].Size);
++                Assert.AreEqual(60, galks.Key(3)[0].Size);
++                Assert.AreEqual(60, galks.Key(5)[0].Size);
++                Assert.AreEqual(60, galks.Key(7)[0].Size);
++                Assert.AreEqual(4, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, new List<UInt64> { 1 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsTrue(galks.HasKey(1));
++                Assert.IsFalse(galks.HasKey(3));
++                Assert.IsFalse(galks.HasKey(511));
++                Assert.AreEqual(4, galks.Key(1)[0].Size);
++                Assert.AreEqual(1, galks.Size);
++
++                keygen.GenerateGaloisKeys(30, new List<UInt64> { 511 }, galks);
++                Assert.AreEqual(galks.HashBlock, parms.HashBlock);
++                Assert.IsFalse(galks.HasKey(1));
++                Assert.IsTrue(galks.HasKey(511));
++                Assert.AreEqual(4, galks.Key(511)[0].Size);
++                Assert.AreEqual(1, galks.Size);
+             }
+         }
+     }
+diff --git a/SEALTest/evaluator.cpp b/SEALTest/evaluator.cpp
+index 51e083a..edde078 100644
+--- a/SEALTest/evaluator.cpp
++++ b/SEALTest/evaluator.cpp
+@@ -964,6 +964,85 @@ namespace SEALTest
+             Assert::IsTrue(encrypted.hash_block() == parms.hash_block());
+         }
+ 
++        TEST_METHOD(FVEncryptApplyGaloisDecrypt)
++        {
++            EncryptionParameters parms;
++            SmallModulus plain_modulus(257);
++            BigPoly poly_modulus("1x^8 + 1");
++            parms.set_poly_modulus(poly_modulus);
++            parms.set_plain_modulus(plain_modulus);
++            parms.set_coeff_modulus({ small_mods_40bit(0), small_mods_40bit(1) });
++            SEALContext context(parms);
++            KeyGenerator keygen(context);
++            GaloisKeys glk;
++            keygen.generate_galois_keys(24, { 1, 3, 5, 15 }, glk);
++
++            Encryptor encryptor(context, keygen.public_key());
++            Evaluator evaluator(context);
++            Decryptor decryptor(context, keygen.secret_key());
++
++            Plaintext plain("1");
++            Ciphertext encrypted;
++            encryptor.encrypt(plain, encrypted);
++            evaluator.apply_galois(encrypted, 1, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1" == plain.to_string());
++            evaluator.apply_galois(encrypted, 3, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1" == plain.to_string());
++            evaluator.apply_galois(encrypted, 5, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1" == plain.to_string());
++            evaluator.apply_galois(encrypted, 15, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1" == plain.to_string());
++
++            plain = "1x^1";
++            encryptor.encrypt(plain, encrypted);
++            evaluator.apply_galois(encrypted, 1, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^1" == plain.to_string());
++            evaluator.apply_galois(encrypted, 3, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^3" == plain.to_string());
++            evaluator.apply_galois(encrypted, 5, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("100x^7" == plain.to_string());
++            evaluator.apply_galois(encrypted, 15, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^1" == plain.to_string());
++
++            plain = "1x^2";
++            encryptor.encrypt(plain, encrypted);
++            evaluator.apply_galois(encrypted, 1, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^2" == plain.to_string());
++            evaluator.apply_galois(encrypted, 3, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^6" == plain.to_string());
++            evaluator.apply_galois(encrypted, 5, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("100x^6" == plain.to_string());
++            evaluator.apply_galois(encrypted, 15, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^2" == plain.to_string());
++
++            plain = "1x^3 + 2x^2 + 1x^1 + 1";
++            encryptor.encrypt(plain, encrypted);
++            evaluator.apply_galois(encrypted, 1, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^3 + 2x^2 + 1x^1 + 1" == plain.to_string());
++            evaluator.apply_galois(encrypted, 3, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("2x^6 + 1x^3 + 100x^1 + 1" == plain.to_string());
++            evaluator.apply_galois(encrypted, 5, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("100x^7 + FFx^6 + 100x^5 + 1" == plain.to_string());
++            evaluator.apply_galois(encrypted, 15, glk);
++            decryptor.decrypt(encrypted, plain);
++            Assert::IsTrue("1x^3 + 2x^2 + 1x^1 + 1" == plain.to_string());
++        }
++
+         TEST_METHOD(FVEncryptRotateMatrixDecrypt)
+         {
+             EncryptionParameters parms;
+diff --git a/SEALTest/keygenerator.cpp b/SEALTest/keygenerator.cpp
+index b4e15b3..a64b1af 100644
+--- a/SEALTest/keygenerator.cpp
++++ b/SEALTest/keygenerator.cpp
+@@ -68,6 +68,79 @@ namespace SEALTest
+                         }
+                     }
+                 }
++
++                GaloisKeys galks;
++                keygen.generate_galois_keys(60, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::AreEqual(2, galks.key(3)[0].size());
++                Assert::AreEqual(10, galks.size());
++
++                keygen.generate_galois_keys(30, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::AreEqual(4, galks.key(3)[0].size());
++                Assert::AreEqual(10, galks.size());
++
++                keygen.generate_galois_keys(2, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::AreEqual(60, galks.key(3)[0].size());
++                Assert::AreEqual(10, galks.size());
++
++                keygen.generate_galois_keys(60, { 1, 3, 5, 7 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(3));
++                Assert::IsTrue(galks.has_key(5));
++                Assert::IsTrue(galks.has_key(7));
++                Assert::IsFalse(galks.has_key(9));
++                Assert::IsFalse(galks.has_key(127));
++                Assert::AreEqual(2, galks.key(1)[0].size());
++                Assert::AreEqual(2, galks.key(3)[0].size());
++                Assert::AreEqual(2, galks.key(5)[0].size());
++                Assert::AreEqual(2, galks.key(7)[0].size());
++                Assert::AreEqual(4, galks.size());
++
++                keygen.generate_galois_keys(30, { 1, 3, 5, 7 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(3));
++                Assert::IsTrue(galks.has_key(5));
++                Assert::IsTrue(galks.has_key(7));
++                Assert::IsFalse(galks.has_key(9));
++                Assert::IsFalse(galks.has_key(127));
++                Assert::AreEqual(4, galks.key(1)[0].size());
++                Assert::AreEqual(4, galks.key(3)[0].size());
++                Assert::AreEqual(4, galks.key(5)[0].size());
++                Assert::AreEqual(4, galks.key(7)[0].size());
++                Assert::AreEqual(4, galks.size());
++
++                keygen.generate_galois_keys(2, { 1, 3, 5, 7 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(3));
++                Assert::IsTrue(galks.has_key(5));
++                Assert::IsTrue(galks.has_key(7));
++                Assert::IsFalse(galks.has_key(9));
++                Assert::IsFalse(galks.has_key(127));
++                Assert::AreEqual(60, galks.key(1)[0].size());
++                Assert::AreEqual(60, galks.key(3)[0].size());
++                Assert::AreEqual(60, galks.key(5)[0].size());
++                Assert::AreEqual(60, galks.key(7)[0].size());
++                Assert::AreEqual(4, galks.size());
++
++                keygen.generate_galois_keys(30, { 1 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsFalse(galks.has_key(3));
++                Assert::IsFalse(galks.has_key(127));
++                Assert::AreEqual(4, galks.key(1)[0].size());
++                Assert::AreEqual(1, galks.size());
++
++                keygen.generate_galois_keys(30, { 127 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsFalse(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(127));
++                Assert::AreEqual(4, galks.key(127)[0].size());
++                Assert::AreEqual(1, galks.size());
+             }
+             {
+                 parms.set_noise_standard_deviation(3.19);
+@@ -121,6 +194,79 @@ namespace SEALTest
+                         }
+                     }
+                 }
++
++                GaloisKeys galks;
++                keygen.generate_galois_keys(60, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::AreEqual(2, galks.key(3)[0].size());
++                Assert::AreEqual(14, galks.size());
++
++                keygen.generate_galois_keys(30, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::AreEqual(4, galks.key(3)[0].size());
++                Assert::AreEqual(14, galks.size());
++
++                keygen.generate_galois_keys(2, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::AreEqual(60, galks.key(3)[0].size());
++                Assert::AreEqual(14, galks.size());
++
++                keygen.generate_galois_keys(60, { 1, 3, 5, 7 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(3));
++                Assert::IsTrue(galks.has_key(5));
++                Assert::IsTrue(galks.has_key(7));
++                Assert::IsFalse(galks.has_key(9));
++                Assert::IsFalse(galks.has_key(511));
++                Assert::AreEqual(2, galks.key(1)[0].size());
++                Assert::AreEqual(2, galks.key(3)[0].size());
++                Assert::AreEqual(2, galks.key(5)[0].size());
++                Assert::AreEqual(2, galks.key(7)[0].size());
++                Assert::AreEqual(4, galks.size());
++
++                keygen.generate_galois_keys(30, { 1, 3, 5, 7 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(3));
++                Assert::IsTrue(galks.has_key(5));
++                Assert::IsTrue(galks.has_key(7));
++                Assert::IsFalse(galks.has_key(9));
++                Assert::IsFalse(galks.has_key(511));
++                Assert::AreEqual(4, galks.key(1)[0].size());
++                Assert::AreEqual(4, galks.key(3)[0].size());
++                Assert::AreEqual(4, galks.key(5)[0].size());
++                Assert::AreEqual(4, galks.key(7)[0].size());
++                Assert::AreEqual(4, galks.size());
++
++                keygen.generate_galois_keys(2, { 1, 3, 5, 7 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(3));
++                Assert::IsTrue(galks.has_key(5));
++                Assert::IsTrue(galks.has_key(7));
++                Assert::IsFalse(galks.has_key(9));
++                Assert::IsFalse(galks.has_key(511));
++                Assert::AreEqual(60, galks.key(1)[0].size());
++                Assert::AreEqual(60, galks.key(3)[0].size());
++                Assert::AreEqual(60, galks.key(5)[0].size());
++                Assert::AreEqual(60, galks.key(7)[0].size());
++                Assert::AreEqual(4, galks.size());
++
++                keygen.generate_galois_keys(30, { 1 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsTrue(galks.has_key(1));
++                Assert::IsFalse(galks.has_key(3));
++                Assert::IsFalse(galks.has_key(511));
++                Assert::AreEqual(4, galks.key(1)[0].size());
++                Assert::AreEqual(1, galks.size());
++
++                keygen.generate_galois_keys(30, { 511 }, galks);
++                Assert::IsTrue(galks.hash_block() == parms.hash_block());
++                Assert::IsFalse(galks.has_key(1));
++                Assert::IsTrue(galks.has_key(511));
++                Assert::AreEqual(4, galks.key(511)[0].size());
++                Assert::AreEqual(1, galks.size());
+             }
+         }
+     };
+-- 
+2.14.1
+
+
+From ba2d0d2b46cad9bb3997427929e30013d65dfc28 Mon Sep 17 00:00:00 2001
+From: Kim Laine <kim.laine@microsoft.com>
+Date: Mon, 4 Dec 2017 17:31:18 -0800
+Subject: [PATCH 2/2] Added negacyclic_shift_poly_coeffmod
+
+---
+ SEAL/seal/util/polyarithsmallmod.cpp |  28 ++++++---
+ SEAL/seal/util/polyarithsmallmod.h   |  54 +++++++++++++++++-
+ SEALTest/util/polyarithsmallmod.cpp  | 108 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 181 insertions(+), 9 deletions(-)
+
+diff --git a/SEAL/seal/util/polyarithsmallmod.cpp b/SEAL/seal/util/polyarithsmallmod.cpp
+index 5bfeede..4719348 100644
+--- a/SEAL/seal/util/polyarithsmallmod.cpp
++++ b/SEAL/seal/util/polyarithsmallmod.cpp
+@@ -407,16 +407,30 @@ namespace seal
+             }
+         }
+ 
+-        uint64_t poly_infty_norm_coeffmod(const std::uint64_t *poly, int poly_coeff_count, const SmallModulus &modulus)
++        uint64_t poly_infty_norm_coeffmod(const std::uint64_t *operand, int coeff_count, const SmallModulus &modulus)
+         {
++#ifdef SEAL_DEBUG
++            if (operand == nullptr && coeff_count > 0)
++            {
++                throw invalid_argument("operand");
++            }
++            if (coeff_count < 0)
++            {
++                throw invalid_argument("coeff_count");
++            }
++            if (modulus.is_zero())
++            {
++                throw invalid_argument("modulus");
++            }
++#endif
+             // Construct negative threshold (first negative modulus value) to compute absolute values of coeffs.
+             uint64_t modulus_neg_threshold = (modulus.value() + 1) >> 1;
+ 
+             // Mod out the poly coefficients and choose a symmetric representative from [-modulus,modulus). Keep track of the max.
+             uint64_t result = 0;
+-            for (int coeff_index = 0; coeff_index < poly_coeff_count; coeff_index++)
++            for (int coeff_index = 0; coeff_index < coeff_count; coeff_index++)
+             {
+-                uint64_t poly_coeff = poly[coeff_index] % modulus.value();
++                uint64_t poly_coeff = operand[coeff_index] % modulus.value();
+                 if (poly_coeff >= modulus_neg_threshold)
+                 {
+                     poly_coeff = modulus.value() - poly_coeff;
+@@ -594,14 +608,14 @@ namespace seal
+             return true;
+         }
+ 
+-        void exponentiate_poly_polymod_coeffmod(const uint64_t *poly, const uint64_t *exponent, int exponent_uint64_count, const PolyModulus &poly_modulus, const SmallModulus &modulus, uint64_t *result, MemoryPool &pool)
++        void exponentiate_poly_polymod_coeffmod(const uint64_t *operand, const uint64_t *exponent, int exponent_uint64_count, const PolyModulus &poly_modulus, const SmallModulus &modulus, uint64_t *result, MemoryPool &pool)
+         {
+             int poly_modulus_coeff_count = poly_modulus.coeff_count();
+ #ifdef SEAL_DEBUG
+             int poly_modulus_coeff_uint64_count = poly_modulus.coeff_uint64_count();
+-            if (poly == nullptr)
++            if (operand == nullptr)
+             {
+-                throw invalid_argument("poly");
++                throw invalid_argument("operand");
+             }
+             if (exponent == nullptr)
+             {
+@@ -631,7 +645,7 @@ namespace seal
+                 return;
+             }
+ 
+-            modulo_poly(poly, poly_modulus_coeff_count, poly_modulus, modulus, result, pool);
++            modulo_poly(operand, poly_modulus_coeff_count, poly_modulus, modulus, result, pool);
+ 
+             if (is_equal_uint(exponent, exponent_uint64_count, 1))
+             {
+diff --git a/SEAL/seal/util/polyarithsmallmod.h b/SEAL/seal/util/polyarithsmallmod.h
+index d660439..f081184 100644
+--- a/SEAL/seal/util/polyarithsmallmod.h
++++ b/SEAL/seal/util/polyarithsmallmod.h
+@@ -556,14 +556,64 @@ namespace seal
+             modulo_poly_inplace(result, result_coeff_count, poly_modulus, modulus);
+         }
+ 
+-        std::uint64_t poly_infty_norm_coeffmod(const std::uint64_t *poly, int poly_coeff_count,
++        std::uint64_t poly_infty_norm_coeffmod(const std::uint64_t *operand, int coeff_count, 
+             const SmallModulus &modulus);
+ 
+         bool try_invert_poly_coeffmod(const std::uint64_t *operand, const std::uint64_t *poly_modulus, 
+             int coeff_count, const SmallModulus &modulus, std::uint64_t *result, MemoryPool &pool);
+ 
+-        void exponentiate_poly_polymod_coeffmod(const std::uint64_t *poly, const std::uint64_t *exponent,
++        void exponentiate_poly_polymod_coeffmod(const std::uint64_t *operand, const std::uint64_t *exponent,
+             int exponent_uint64_count, const PolyModulus &poly_modulus, const SmallModulus &modulus, 
+             std::uint64_t *result, MemoryPool &pool);
++
++        inline void negacyclic_shift_poly_coeffmod(const std::uint64_t *operand, int coeff_count, int shift,
++            const SmallModulus &modulus, std::uint64_t *result)
++        {
++#ifdef SEAL_DEBUG
++            if (operand == nullptr && coeff_count > 0)
++            {
++                throw std::invalid_argument("operand");
++            }
++            if (result == nullptr && coeff_count > 0)
++            {
++                throw std::invalid_argument("result");
++            }
++            if (operand == result && coeff_count > 0)
++            {
++                throw std::invalid_argument("operand cannot point to the same location as result");
++            }
++            if (coeff_count < 0)
++            {
++                throw std::invalid_argument("coeff_count");
++            }
++            if (modulus.is_zero())
++            {
++                throw std::invalid_argument("modulus");
++            }
++            if (shift < 0)
++            {
++                throw std::invalid_argument("shift");
++            }
++            if (util::get_power_of_two(static_cast<std::uint64_t>(coeff_count)) < 0)
++            {
++                throw std::invalid_argument("coeff_count");
++            }
++#endif
++            std::uint64_t index_raw = shift;
++            std::uint64_t coeff_count_mod_mask = static_cast<std::uint64_t>(coeff_count) - 1;
++            std::uint64_t index;
++            for (int i = 0; i < coeff_count; i++, operand++, index_raw++)
++            {
++                index = index_raw & coeff_count_mod_mask;
++                if (!(index_raw & static_cast<std::uint64_t>(coeff_count)) || (*operand == 0))
++                {
++                    result[index] = *operand;
++                }
++                else
++                {
++                    result[index] = modulus.value() - *operand;
++                }
++            }
++        }
+     }
+ }
+diff --git a/SEALTest/util/polyarithsmallmod.cpp b/SEALTest/util/polyarithsmallmod.cpp
+index e917034..93df00b 100644
+--- a/SEALTest/util/polyarithsmallmod.cpp
++++ b/SEALTest/util/polyarithsmallmod.cpp
+@@ -470,6 +470,114 @@ namespace SEALTest
+                 Assert::AreEqual(9ULL, result[1]);
+                 Assert::AreEqual(0ULL, result[2]);
+             }
++
++            TEST_METHOD(NegacyclicShiftPolyCoeffSmallMod)
++            {
++                MemoryPool &pool = *global_variables::global_memory_pool;
++                Pointer poly(allocate_zero_poly(4, 1, pool));
++                Pointer result(allocate_zero_poly(4, 1, pool));
++
++                SmallModulus mod(10);
++                int coeff_count = 4;
++
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 0, mod, result.get());
++                Assert::AreEqual(0ULL, result[0]);
++                Assert::AreEqual(0ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(0ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 1, mod, result.get());
++                Assert::AreEqual(0ULL, result[0]);
++                Assert::AreEqual(0ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(0ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 4, mod, result.get());
++                Assert::AreEqual(0ULL, result[0]);
++                Assert::AreEqual(0ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(0ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 5, mod, result.get());
++                Assert::AreEqual(0ULL, result[0]);
++                Assert::AreEqual(0ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(0ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 8, mod, result.get());
++                Assert::AreEqual(0ULL, result[0]);
++                Assert::AreEqual(0ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(0ULL, result[3]);
++
++                poly[0] = 1;
++                poly[1] = 2;
++                poly[2] = 3;
++                poly[3] = 4;
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 0, mod, result.get());
++                Assert::AreEqual(1ULL, result[0]);
++                Assert::AreEqual(2ULL, result[1]);
++                Assert::AreEqual(3ULL, result[2]);
++                Assert::AreEqual(4ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 1, mod, result.get());
++                Assert::AreEqual(6ULL, result[0]);
++                Assert::AreEqual(1ULL, result[1]);
++                Assert::AreEqual(2ULL, result[2]);
++                Assert::AreEqual(3ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 4, mod, result.get());
++                Assert::AreEqual(9ULL, result[0]);
++                Assert::AreEqual(8ULL, result[1]);
++                Assert::AreEqual(7ULL, result[2]);
++                Assert::AreEqual(6ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 5, mod, result.get());
++                Assert::AreEqual(4ULL, result[0]);
++                Assert::AreEqual(9ULL, result[1]);
++                Assert::AreEqual(8ULL, result[2]);
++                Assert::AreEqual(7ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 8, mod, result.get());
++                Assert::AreEqual(1ULL, result[0]);
++                Assert::AreEqual(2ULL, result[1]);
++                Assert::AreEqual(3ULL, result[2]);
++                Assert::AreEqual(4ULL, result[3]);
++
++                poly[0] = 1;
++                poly[1] = 2;
++                poly[2] = 0;
++                poly[3] = 4;
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 0, mod, result.get());
++                Assert::AreEqual(1ULL, result[0]);
++                Assert::AreEqual(2ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(4ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 1, mod, result.get());
++                Assert::AreEqual(6ULL, result[0]);
++                Assert::AreEqual(1ULL, result[1]);
++                Assert::AreEqual(2ULL, result[2]);
++                Assert::AreEqual(0ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 4, mod, result.get());
++                Assert::AreEqual(9ULL, result[0]);
++                Assert::AreEqual(8ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(6ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 5, mod, result.get());
++                Assert::AreEqual(4ULL, result[0]);
++                Assert::AreEqual(9ULL, result[1]);
++                Assert::AreEqual(8ULL, result[2]);
++                Assert::AreEqual(0ULL, result[3]);
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 8, mod, result.get());
++                Assert::AreEqual(1ULL, result[0]);
++                Assert::AreEqual(2ULL, result[1]);
++                Assert::AreEqual(0ULL, result[2]);
++                Assert::AreEqual(4ULL, result[3]);
++
++                poly[0] = 1;
++                poly[1] = 2;
++                poly[2] = 3;
++                poly[3] = 4;
++                coeff_count = 2;
++                negacyclic_shift_poly_coeffmod(poly.get(), coeff_count, 1, mod, result.get());
++                negacyclic_shift_poly_coeffmod(poly.get() + 2, coeff_count, 1, mod, result.get() + 2);
++                Assert::AreEqual(8ULL, result[0]);
++                Assert::AreEqual(1ULL, result[1]);
++                Assert::AreEqual(6ULL, result[2]);
++                Assert::AreEqual(3ULL, result[3]);
++            }
+         };
+     }
+ }
+\ No newline at end of file
+-- 
+2.14.1
+
