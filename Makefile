@@ -1,27 +1,26 @@
-CPP=g++
+CXX=g++
 
-IDIR = ../SEAL/SEAL
-LDIR = ../SEAL/SEAL/bin
-ODIR=obj
-BDIR=bin
+IDIR =../SEAL/SEAL/
+LDIR =../SEAL/bin/
 
 CFLAGS=-std=c++11 -I. -I$(IDIR) -O3
+ODIR=obj
+BDIR=bin
 LIBS=-L$(LDIR) -lseal
 
-_DEPS = pir.hpp
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+DEPS = pir.hpp pir_server.hpp pir_client.hpp
 
-_OBJ = pir.o main.o 
+_OBJ = pir.o main.o pir_server.o pir_client.o 
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
-$(ODIR)/%.o: %.cpp
+$(ODIR)/%.o: %.cpp $(DEPS)
 	@mkdir -p $(@D)
-	$(CPP) -c -o $@ $< $(CFLAGS)
+	$(CXX) -c -o $@ $< $(CFLAGS)
 
-$(BDIR)/main: $(OBJ)
+$(BDIR)/main: $(OBJ) $(DEPS) 
 	@mkdir -p $(@D)
-	$(CPP) -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CXX) -o $@ $(OBJ) $(CFLAGS) $(LIBS)
 
 all: main
 
