@@ -1,7 +1,7 @@
 CPP=g++
 
-IDIR = ../SEAL/SEAL
-LDIR = ../SEAL/SEAL/bin
+IDIR = ../SEAL/SEAL/
+LDIR = ../SEAL/bin/
 ODIR=obj
 BDIR=bin
 

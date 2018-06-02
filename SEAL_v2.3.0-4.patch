@@ -1,7 +1,7 @@
-From 28d51756e680470bd81cbd1932dc9fef656aa590 Mon Sep 17 00:00:00 2001
+From e37bf6b79c81cbbeff19378ad425f987c036286b Mon Sep 17 00:00:00 2001
 From: Kim Laine <kim.laine@microsoft.com>
 Date: Mon, 4 Dec 2017 16:09:56 -0800
-Subject: [PATCH 1/2] Explosed generic Galois automorphisms in public API
+Subject: [PATCH 1/3] Explosed generic Galois automorphisms in public API
 
 ---
  SEAL/seal/evaluator.cpp                 |   5 +
@@ -19,7 +19,7 @@ Subject: [PATCH 1/2] Explosed generic Galois automorphisms in public API
  12 files changed, 990 insertions(+), 69 deletions(-)
 
 diff --git a/SEAL/seal/evaluator.cpp b/SEAL/seal/evaluator.cpp
-index 4c939c3..e9c5932 100644
+index 0a5b99d..8945b5d 100644
 --- a/SEAL/seal/evaluator.cpp
 +++ b/SEAL/seal/evaluator.cpp
 @@ -1791,6 +1791,11 @@ namespace seal
@@ -35,7 +35,7 @@ index 4c939c3..e9c5932 100644
          if (steps == 0)
          {
 diff --git a/SEAL/seal/evaluator.h b/SEAL/seal/evaluator.h
-index 502040c..2d5ab04 100644
+index 5b67455..93cc1d2 100644
 --- a/SEAL/seal/evaluator.h
 +++ b/SEAL/seal/evaluator.h
 @@ -894,13 +894,136 @@ namespace seal
@@ -271,7 +271,7 @@ index 502040c..2d5ab04 100644
          @throws std::invalid_argument if encrypted or galois_keys is not valid for the
          encryption parameters
          @throws std::invalid_argument if encrypted has size greater than two
-@@ -1115,10 +1252,11 @@ namespace seal
+@@ -1101,10 +1238,11 @@ namespace seal
  
          Evaluator &operator =(Evaluator &&assign) = delete;
  
@@ -286,7 +286,7 @@ index 502040c..2d5ab04 100644
          {
  #ifdef SEAL_DEBUG
              if (value == nullptr)
-@@ -1164,7 +1302,8 @@ namespace seal
+@@ -1150,7 +1288,8 @@ namespace seal
              }
          }
  
@@ -296,7 +296,7 @@ index 502040c..2d5ab04 100644
          {
  #ifdef SEAL_DEBUG
              if (value == nullptr)
-@@ -1223,32 +1362,6 @@ namespace seal
+@@ -1209,32 +1348,6 @@ namespace seal
  
          void populate_Zmstar_to_generator();
  
@@ -1494,10 +1494,10 @@ index b4e15b3..a64b1af 100644
 2.14.1
 
 
-From ba2d0d2b46cad9bb3997427929e30013d65dfc28 Mon Sep 17 00:00:00 2001
+From 1fdfa03edbb50835beedefe26d74f17918c4f1e1 Mon Sep 17 00:00:00 2001
 From: Kim Laine <kim.laine@microsoft.com>
 Date: Mon, 4 Dec 2017 17:31:18 -0800
-Subject: [PATCH 2/2] Added negacyclic_shift_poly_coeffmod
+Subject: [PATCH 2/3] Added negacyclic_shift_poly_coeffmod
 
 ---
  SEAL/seal/util/polyarithsmallmod.cpp |  28 ++++++---
@@ -1761,6 +1761,41 @@ index e917034..93df00b 100644
      }
  }
 \ No newline at end of file
+-- 
+2.14.1
+
+
+From 9c5a16fb3e8ffc5bae69ba175867d89b774091c5 Mon Sep 17 00:00:00 2001
+From: Sebastian Angel <sebs@cs.utexas.edu>
+Date: Tue, 15 May 2018 00:11:24 +0000
+Subject: [PATCH 3/3] enable mutable
+
+---
+ SEAL/seal/util/defines.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SEAL/seal/util/defines.h b/SEAL/seal/util/defines.h
+index 20c0bf2..4e1b2fb 100644
+--- a/SEAL/seal/util/defines.h
++++ b/SEAL/seal/util/defines.h
+@@ -19,7 +19,7 @@
+ // parameter compatibility checks pass in cases where they normally 
+ // should not pass. Please note that it is extremely easy to break 
+ // things by doing this, and the consequences can be unexpected.
+-//#define SEAL_EXPOSE_MUTABLE_HASH_BLOCK
++#define SEAL_EXPOSE_MUTABLE_HASH_BLOCK
+ 
+ // Allow ciphertext data to be directly modified by exposing the
+ // functions seal::Ciphertext::mutable_pointer(int) and 
+@@ -28,7 +28,7 @@
+ // way of mutating ciphertext data is by allocating memory manually, 
+ // and using aliased ciphertexts pointing to the allocated memory, 
+ // which can then be mutated freely.
+-//#define SEAL_EXPOSE_MUTABLE_CIPHERTEXT
++#define SEAL_EXPOSE_MUTABLE_CIPHERTEXT
+ 
+ // For security reasons one should never throw when decoding fails due
+ // to overflow, but in some cases this might help in diagnosing problems.
 -- 
 2.14.1
 
