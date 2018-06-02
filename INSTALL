@@ -1,2 +1,8 @@
-When using with SEAL v2.3.0-4 you need to first apply the patch `SEAL_v2.3.0-4.patch' to SEAL.
+When using with SEAL v2.3.0-4 you need to first apply the patch `SEAL_v2.3.0-4.patch' to SEAL,
+and uncomment the line
+
+	//#define SEAL_EXPOSE_MUTABLE_CIPHERTEXT
+
+in the file SEAL/seal/util/defines.h. Then rebuild SEAL.
+
 To build SealPIR, simply run `make'. It expects SEAL v2.3.0-4 to be installed in ../SEAL.
