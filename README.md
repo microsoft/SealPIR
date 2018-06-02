@@ -5,7 +5,7 @@ SealPIR is a (research) library and should not be used in production systems. Se
 
 # Compiling SEAL
 
-SealPIR depends on SEAL v2.3.0-4 and a patch that exposes the substitution operator. You can get SEAL v2.3.0-4 from this [link](https://sealcrypto.org).
+SealPIR depends on SEAL v2.3.0-4 and a patch that exposes the substitution operator. You can get SEAL v2.3.0-4 from this [link](http://sealcrypto.org).
 
 Once you have downloaded SEAL, apply the patch SEAL_v2.3.0-4.patch (available in this repository) to it. Here are the exact steps. 
 
