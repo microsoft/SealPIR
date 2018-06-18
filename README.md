@@ -5,7 +5,7 @@ SealPIR is a (research) library and should not be used in production systems. Se
 
 # Compiling SEAL
 
-SealPIR depends on SEAL 2.3.1 ([link](http://sealcrypto.org). Download SEAL, and follow the instructions in INSTALL.txt to install it system-wide.
+SealPIR depends on SEAL 2.3.1 ([link](http://sealcrypto.org)). Download SEAL, and follow the instructions in INSTALL.txt to install it system-wide.
 
 # Compiling SealPIR
 
