@@ -31,7 +31,7 @@ void PIRServer::update_parameters(const EncryptionParameters &expanded_params,
 
     // Update all the galois keys
     for (std::pair<const int, GaloisKeys> &key : galoisKeys_) {
-        key.second.mutable_hash_block() = expanded_params_.hash_block();
+        key.second.hash_block() = expanded_params_.hash_block();
     }
 }
 
@@ -138,7 +138,7 @@ void PIRServer::set_database(const uint8_t *bytes, uint64_t ele_num, uint64_t el
 }
 
 void PIRServer::set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey) {
-    galkey.mutable_hash_block() = expanded_params_.hash_block();
+    galkey.hash_block() = expanded_params_.hash_block();
     galoisKeys_[client_id] = galkey;
 }
 
@@ -308,10 +308,10 @@ inline void PIRServer::multiply_power_of_X(const Ciphertext &encrypted, Cipherte
     // Multiply X^index for each ciphertext polynomial
     for (int i = 0; i < encrypted_count; i++) {
         for (int j = 0; j < coeff_mod_count; j++) {
-            negacyclic_shift_poly_coeffmod(encrypted.pointer(i) + (j * coeff_count),
+            negacyclic_shift_poly_coeffmod(encrypted.data(i) + (j * coeff_count),
                                            coeff_count - 1, index,
                                            expanded_params_.coeff_modulus()[j],
-                                           destination.mutable_pointer(i) + (j * coeff_count));
+                                           destination.data(i) + (j * coeff_count));
         }
     }
 }
@@ -330,7 +330,7 @@ inline void PIRServer::decompose_to_plaintexts_ptr(const Ciphertext &encrypted, 
     // A triple for loop. Going over polys, moduli, and decomposed index.
 
     for (int i = 0; i < encrypted_count; i++) {
-        const uint64_t *encrypted_pointer = encrypted.pointer(i);
+        const uint64_t *encrypted_pointer = encrypted.data(i);
         for (int j = 0; j < coeff_mod_count; j++) {
             // populate one poly at a time.
             // create a polynomial to store the current decomposition value
@@ -366,7 +366,7 @@ vector<Plaintext> PIRServer::decompose_to_plaintexts(const Ciphertext &encrypted
 
     // A triple for loop. Going over polys, moduli, and decomposed index.
     for (int i = 0; i < encrypted_count; i++) {
-        const uint64_t *encrypted_pointer = encrypted.pointer(i);
+        const uint64_t *encrypted_pointer = encrypted.data(i);
         for (int j = 0; j < coeff_mod_count; j++) {
             // populate one poly at a time.
             // create a polynomial to store the current decomposition value
@@ -382,7 +382,7 @@ vector<Plaintext> PIRServer::decompose_to_plaintexts(const Ciphertext &encrypted
                 BigPoly temp;
                 temp.resize(coeff_count, plain_bit_count);
                 temp.set_zero();
-                uint64_t *plain_coeff = temp.pointer();
+                uint64_t *plain_coeff = temp.data();
                 for (int m = 0; m < coeff_count; m++) {
                     *(plain_coeff + m) =
                         (*(encrypted_pointer + m + (j * coeff_count)) / cur) % plainMod;

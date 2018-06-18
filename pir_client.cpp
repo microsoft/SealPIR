@@ -19,7 +19,7 @@ PIRClient::PIRClient(const EncryptionParameters &params,
     encryptor_.reset(new Encryptor(context, keygen_->public_key()));
 
     SecretKey secret_key = keygen_->secret_key();
-    secret_key.mutable_hash_block() = expanded_params.hash_block();
+    secret_key.hash_block() = expanded_params.hash_block();
 
     decryptor_.reset(new Decryptor(newcontext, secret_key));
     evaluator_.reset(new Evaluator(newcontext));
@@ -37,7 +37,7 @@ void PIRClient::update_parameters(const EncryptionParameters &expanded_params,
     SEALContext newcontext(expanded_params);
 
     SecretKey secret_key = keygen_->secret_key();
-    secret_key.mutable_hash_block() = expanded_params.hash_block();
+    secret_key.hash_block() = expanded_params.hash_block();
 
     decryptor_.reset(new Decryptor(newcontext, secret_key));
     evaluator_.reset(new Evaluator(newcontext));
@@ -51,7 +51,7 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
     for (uint32_t i = 0; i < indices.size(); i++) {
         Ciphertext dest;
         encryptor_->encrypt(Plaintext("1x^" + std::to_string(indices[i])), dest);
-        dest.mutable_hash_block() = expanded_params_.hash_block();
+        dest.hash_block() = expanded_params_.hash_block();
         result.push_back(dest);
     }
 
@@ -146,7 +146,7 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
 
     // A triple for loop. Going over polys, moduli, and decomposed index.
     for (int i = 0; i < encrypted_count; i++) {
-        uint64_t *encrypted_pointer = result.mutable_pointer(i);
+        uint64_t *encrypted_pointer = result.data(i);
 
         for (int j = 0; j < coeff_mod_count; j++) {
             // populate one poly at a time.
@@ -164,7 +164,7 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
                 // Compose here
                 const uint64_t *plain_coeff =
                     plains[k + j * (expansion_ratio) + i * (coeff_mod_count * expansion_ratio)]
-                        .pointer();
+                        .data();
 
                 for (int m = 0; m < coeff_count - 1; m++) {
                     if (k == 0) {
@@ -188,6 +188,6 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
         }
     }
 
-    result.mutable_hash_block() = expanded_params_.hash_block();
+    result.hash_block() = expanded_params_.hash_block();
     return result;
 }

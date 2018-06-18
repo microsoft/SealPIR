@@ -222,7 +222,7 @@ void coeffs_to_bytes(uint32_t limit, const Plaintext &coeffs, uint8_t *output, u
 void vector_to_plaintext(const vector<uint64_t> &coeffs, Plaintext &plain) {
     uint32_t coeff_count = coeffs.size();
     plain.resize(coeff_count);
-    util::set_uint_uint(coeffs.data(), coeff_count, plain.pointer());
+    util::set_uint_uint(coeffs.data(), coeff_count, plain.data());
 }
 
 vector<uint64_t> compute_indices(uint64_t desiredIndex, vector<uint64_t> Nvec) {
