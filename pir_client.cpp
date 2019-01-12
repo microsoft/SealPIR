@@ -5,57 +5,53 @@ using namespace seal;
 using namespace seal::util;
 
 PIRClient::PIRClient(const EncryptionParameters &params,
-                     const EncryptionParameters &expanded_params, 
                      const PirParams &pir_parms) :
-    params_(params),
-    expanded_params_(expanded_params) {
+    params_(params){
 
-    auto context = SEALContext::Create(params_);
-    newcontext_ = SEALContext::Create(expanded_params_);
+    newcontext_ = SEALContext::Create(params_);
 
     pir_params_ = pir_parms;
 
-    keygen_ = make_unique<KeyGenerator>(context);
-    encryptor_ = make_unique<Encryptor>(context, keygen_->public_key());
+    keygen_ = make_unique<KeyGenerator>(newcontext_);
+    encryptor_ = make_unique<Encryptor>(newcontext_, keygen_->public_key());
 
     SecretKey secret_key = keygen_->secret_key();
-    secret_key.parms_id() = expanded_params.parms_id();
 
     decryptor_ = make_unique<Decryptor>(newcontext_, secret_key);
     evaluator_ = make_unique<Evaluator>(newcontext_);
 }
 
-void PIRClient::update_parameters(const EncryptionParameters &expanded_params,
-                                  const PirParams &pir_params) 
-{
+// void PIRClient::update_parameters(const EncryptionParameters &expanded_params,
+//                                   const PirParams &pir_params) 
+// {
 
-    // The only thing that can change is the plaintext modulus and pir_params
-    assert(expanded_params.poly_modulus_degree() == expanded_params_.poly_modulus_degree());
-    assert(expanded_params.coeff_modulus() == expanded_params_.coeff_modulus());
+//     // The only thing that can change is the plaintext modulus and pir_params
+//     assert(expanded_params.poly_modulus_degree() == params_.poly_modulus_degree());
+//     assert(expanded_params.coeff_modulus() == params_.coeff_modulus());
 
-    expanded_params_ = expanded_params;
-    pir_params_ = pir_params;
-    auto newcontext = SEALContext::Create(expanded_params);
+//     params_ = expanded_params;
+//     pir_params_ = pir_params;
+//     auto newcontext = SEALContext::Create(expanded_params);
 
-    SecretKey secret_key = keygen_->secret_key();
-    secret_key.parms_id() = expanded_params.parms_id();
+//     SecretKey secret_key = keygen_->secret_key();
+//     secret_key.parms_id() = expanded_params.parms_id();
 
-    decryptor_ = make_unique<Decryptor>(newcontext, secret_key);
-    evaluator_ = make_unique<Evaluator>(newcontext);
-}
+//     decryptor_ = make_unique<Decryptor>(newcontext, secret_key);
+//     evaluator_ = make_unique<Evaluator>(newcontext);
+// }
 
 PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
 
     vector<uint64_t> indices = compute_indices(desiredIndex, pir_params_.nvec);
     vector<Ciphertext> result;
 
-    Plaintext pt(expanded_params_.poly_modulus_degree());
+    Plaintext pt(params_.poly_modulus_degree());
     for (uint32_t i = 0; i < indices.size(); i++) {
         pt.set_zero();
         pt[indices[i]] = 1;
         Ciphertext dest;
         encryptor_->encrypt(pt, dest);
-        dest.parms_id() = expanded_params_.parms_id();
+        dest.parms_id() = params_.parms_id();
         result.push_back(dest);
     }
 
@@ -64,7 +60,7 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
 
 uint64_t PIRClient::get_fv_index(uint64_t element_idx, uint64_t ele_size) {
     auto N = params_.poly_modulus_degree();
-    auto logtp = ceil(log2(expanded_params_.plain_modulus().value()));
+    auto logtp = ceil(log2(params_.plain_modulus().value()));
 
     auto ele_per_ptxt = elements_per_ptxt(logtp, N, ele_size);
     return static_cast<uint64_t>(element_idx / ele_per_ptxt);
@@ -72,7 +68,7 @@ uint64_t PIRClient::get_fv_index(uint64_t element_idx, uint64_t ele_size) {
 
 uint64_t PIRClient::get_fv_offset(uint64_t element_idx, uint64_t ele_size) {
     uint32_t N = params_.poly_modulus_degree();
-    uint32_t logtp = ceil(log2(expanded_params_.plain_modulus().value()));
+    uint32_t logtp = ceil(log2(params_.plain_modulus().value()));
 
     uint64_t ele_per_ptxt = elements_per_ptxt(logtp, N, ele_size);
     return element_idx % ele_per_ptxt;
@@ -139,9 +135,9 @@ GaloisKeys PIRClient::generate_galois_keys() {
 
 Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
     size_t encrypted_count = 2;
-    auto coeff_count = expanded_params_.poly_modulus_degree();
-    auto coeff_mod_count = expanded_params_.coeff_modulus().size();
-    uint64_t plainMod = expanded_params_.plain_modulus().value();
+    auto coeff_count = params_.poly_modulus_degree();
+    auto coeff_mod_count = params_.coeff_modulus().size();
+    uint64_t plainMod = params_.plain_modulus().value();
 
     Ciphertext result(newcontext_);
     result.resize(encrypted_count);
@@ -155,7 +151,7 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
             // create a polynomial to store the current decomposition value
             // which will be copied into the array to populate it at the current
             // index.
-            double logqj = log2(expanded_params_.coeff_modulus()[j].value());
+            double logqj = log2(params_.coeff_modulus()[j].value());
             int expansion_ratio = ceil(logqj / log2(plainMod));
 
             // cout << "expansion ratio = " << expansion_ratio << endl;
@@ -184,12 +180,12 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
             /*
             for (int m = 0; m < coeff_count; m++) {
                 *(encrypted_pointer + m + j * coeff_count) %=
-                    expanded_params_.coeff_modulus()[j].value();
+                    params_.coeff_modulus()[j].value();
             }
             */
         }
     }
 
-    result.parms_id() = expanded_params_.parms_id();
+    result.parms_id() = params_.parms_id();
     return result;
 }

@@ -26,14 +26,13 @@ void gen_params(std::uint64_t ele_num,  // number of elements (not FV plaintexts
                 std::uint32_t N,        // degree of polynomial
                 std::uint32_t logt,     // bits of plaintext coefficient
                 std::uint32_t d,        // dimension of database
-                seal::EncryptionParameters &params, seal::EncryptionParameters &expanded_params,
+                seal::EncryptionParameters &params,
                 PirParams &pir_params);
 
 void update_params(std::uint64_t ele_num, 
                    std::uint64_t ele_size,
                    std::uint32_t d,
-                   const seal::EncryptionParameters &old_params,
-                   seal::EncryptionParameters &expanded_params, PirParams &pir_params);
+                   const seal::EncryptionParameters &old_params, PirParams &pir_params);
 
 // returns the plaintext modulus after expansion
 std::uint32_t plainmod_after_expansion(std::uint32_t logt, std::uint32_t N, 

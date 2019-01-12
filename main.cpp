@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
     // uint64_t number_of_items = 1 << 13;
     // uint64_t number_of_items = 4096;
-     uint64_t number_of_items = 1 << 16;
+    uint64_t number_of_items = 1 << 16;
 
     uint64_t size_per_item = 288; // in bytes
     // uint64_t size_per_item = 1 << 10; // 1 KB.
@@ -24,15 +24,14 @@ int main(int argc, char *argv[]) {
 
     uint32_t N = 2048;
     uint32_t logt = 20;
-    uint32_t d = 2;
+    uint32_t d = 1;
 
     EncryptionParameters params(scheme_type::BFV);
-    EncryptionParameters expanded_params(scheme_type::BFV);
     PirParams pir_params;
 
     // Generates all parameters
     cout << "Generating all parameters" << endl;
-    gen_params(number_of_items, size_per_item, N, logt, d, params, expanded_params, pir_params);
+    gen_params(number_of_items, size_per_item, N, logt, d, params, pir_params);
 
     // Create test database
     auto db(make_unique<uint8_t[]>(number_of_items * size_per_item));
@@ -51,10 +50,10 @@ int main(int argc, char *argv[]) {
 
     // Initialize PIR Server
     cout << "Initializing server and client" << endl;
-    PIRServer server(expanded_params, pir_params);
+    PIRServer server(params, pir_params);
 
     // Initialize PIR client....
-    PIRClient client(params, expanded_params, pir_params);
+    PIRClient client(params, pir_params);
     GaloisKeys galois_keys = client.generate_galois_keys();
 
     // Set galois key
@@ -65,14 +64,9 @@ int main(int argc, char *argv[]) {
     // The following can be used to update parameters rather than creating new instances
     // (here it doesn't do anything).
     cout << "Updating database size to: " << number_of_items << " elements" << endl;
-    update_params(number_of_items, size_per_item, d, params, expanded_params, pir_params);
+    // update_params(number_of_items, size_per_item, d, params, expanded_params, pir_params);
 
-    uint32_t logtp = ceil(log2(expanded_params.plain_modulus().value()));
 
-    cout << "logtp: " << logtp << endl;
-
-    client.update_parameters(expanded_params, pir_params);
-    server.update_parameters(expanded_params, pir_params);
 
     // Measure database setup
     auto time_pre_s = high_resolution_clock::now();
@@ -106,14 +100,14 @@ int main(int argc, char *argv[]) {
     auto time_decode_us = duration_cast<microseconds>(time_decode_e - time_decode_s).count();
 
     // Convert to elements
-    vector<uint8_t> elems(N * logtp / 8);
-    coeffs_to_bytes(logtp, result, elems.data(), (N * logtp) / 8);
+    vector<uint8_t> elems(N * logt / 8);
+    coeffs_to_bytes(logt, result, elems.data(), (N * logt) / 8);
 
     // Check that we retrieved the correct element
     for (uint32_t i = 0; i < size_per_item; i++) {
         if (elems[(offset * size_per_item) + i] != check_db.get()[(ele_index * size_per_item) + i]) {
             cout << "elems " << (int)elems[(offset * size_per_item) + i] << ", db "
-                 << check_db.get()[(ele_index * size_per_item) + i] << endl;
+                 << (int) check_db.get()[(ele_index * size_per_item) + i] << endl;
             cout << "PIR result wrong!" << endl;
             return -1;
         }

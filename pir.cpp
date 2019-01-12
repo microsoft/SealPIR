@@ -33,19 +33,17 @@ vector<uint64_t> get_dimensions(uint64_t plaintext_num, uint32_t d) {
 }
 
 void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
-                uint32_t d, EncryptionParameters &params, EncryptionParameters &expanded_params,
+                uint32_t d, EncryptionParameters &params,
                 PirParams &pir_params) {
     
     // Determine the maximum size of each dimension
-    uint32_t logtp = plainmod_after_expansion(logt, N, d, ele_num, ele_size);
 
-    uint64_t plain_mod = static_cast<uint64_t>(1) << logt;
-    uint64_t expanded_plain_mod = static_cast<uint64_t>(1) << logtp;
-    uint64_t plaintext_num = plaintexts_per_db(logtp, N, ele_num, ele_size);
+    // plain modulus = a power of 2 plus 1
+    uint64_t plain_mod = (static_cast<uint64_t>(1) << logt) + 1;
+    uint64_t plaintext_num = plaintexts_per_db(logt, N, ele_num, ele_size);
 
 #ifdef DEBUG
     cout << "log(plain mod) before expand = " << logt << endl;
-    cout << "log(plain mod) after expand = " << logtp << endl;
     cout << "number of FV plaintexts = " << plaintext_num << endl;
 #endif
 
@@ -62,16 +60,12 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
     params.set_coeff_modulus(coeff_mod_array);
     params.set_plain_modulus(plain_mod);
 
-    expanded_params.set_poly_modulus_degree(N);
-    expanded_params.set_coeff_modulus(coeff_mod_array);
-    expanded_params.set_plain_modulus(expanded_plain_mod);
-
     vector<uint64_t> nvec = get_dimensions(plaintext_num, d);
 
     uint32_t expansion_ratio = 0;
     for (uint32_t i = 0; i < params.coeff_modulus().size(); ++i) {
         double logqi = log2(params.coeff_modulus()[i].value());
-        expansion_ratio += ceil(logqi / logtp);
+        expansion_ratio += ceil(logqi / logt);
     }
 
     pir_params.d = d;
