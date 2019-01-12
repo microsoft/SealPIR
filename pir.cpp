@@ -58,11 +58,11 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
         logq += coeff_mod_array[i].bit_count();
     }
 
-    params.set_poly_modulus("1x^" + to_string(N) + " + 1");
+    params.set_poly_modulus_degree(N);
     params.set_coeff_modulus(coeff_mod_array);
     params.set_plain_modulus(plain_mod);
 
-    expanded_params.set_poly_modulus("1x^" + to_string(N) + " + 1");
+    expanded_params.set_poly_modulus_degree(N);
     expanded_params.set_coeff_modulus(coeff_mod_array);
     expanded_params.set_plain_modulus(expanded_plain_mod);
 
@@ -86,7 +86,7 @@ void update_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
                    PirParams &pir_params) {
 
     uint32_t logt = ceil(log2(old_params.plain_modulus().value()));
-    uint32_t N = old_params.poly_modulus().coeff_count() - 1;
+    uint32_t N = old_params.poly_modulus_degree();
 
     // Determine the maximum size of each dimension
     uint32_t logtp = plainmod_after_expansion(logt, N, d, ele_num, ele_size);
@@ -100,7 +100,7 @@ void update_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
     cout << "number of FV plaintexts = " << plaintext_num << endl;
 #endif
 
-    expanded_params.set_poly_modulus(old_params.poly_modulus());
+    expanded_params.set_poly_modulus_degree(old_params.poly_modulus_degree());
     expanded_params.set_coeff_modulus(old_params.coeff_modulus());
     expanded_params.set_plain_modulus(expanded_plain_mod);
 
@@ -250,9 +250,8 @@ vector<uint64_t> compute_indices(uint64_t desiredIndex, vector<uint64_t> Nvec) {
 
 inline Ciphertext deserialize_ciphertext(string s) {
     Ciphertext c;
-    std::stringstream input(std::ios::binary | std::ios::in);
-    input.str(s);
-    c.load(input);
+    std::istringstream input(s);
+    c.unsafe_load(input);
     return c;
 }
 
@@ -265,7 +264,7 @@ vector<Ciphertext> deserialize_ciphertexts(uint32_t count, string s, uint32_t le
 }
 
 inline string serialize_ciphertext(Ciphertext c) {
-    std::stringstream output(std::ios::binary | std::ios::out);
+    std::ostringstream output;
     c.save(output);
     return output.str();
 }
@@ -279,15 +278,14 @@ string serialize_ciphertexts(vector<Ciphertext> c) {
 }
 
 string serialize_galoiskeys(GaloisKeys g) {
-    std::stringstream output(std::ios::binary | std::ios::out);
+    std::ostringstream output;
     g.save(output);
     return output.str();
 }
 
 GaloisKeys *deserialize_galoiskeys(string s) {
     GaloisKeys *g = new GaloisKeys();
-    std::stringstream input(std::ios::binary | std::ios::in);
-    input.str(s);
-    g->load(input);
+    std::istringstream input(s);
+    g->unsafe_load(input);
     return g;
 }

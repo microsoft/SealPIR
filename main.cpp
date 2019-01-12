@@ -1,10 +1,15 @@
 #include "pir.hpp"
 #include "pir_client.hpp"
 #include "pir_server.hpp"
+#include <seal/seal.h>
 #include <chrono>
+#include <memory>
 #include <random>
+#include <cstdint>
+#include <cstddef>
 
-using namespace chrono;
+using namespace std::chrono;
+using namespace std;
 using namespace seal;
 
 int main(int argc, char *argv[]) {
@@ -21,8 +26,8 @@ int main(int argc, char *argv[]) {
     uint32_t logt = 20;
     uint32_t d = 2;
 
-    EncryptionParameters params;
-    EncryptionParameters expanded_params;
+    EncryptionParameters params(scheme_type::BFV);
+    EncryptionParameters expanded_params(scheme_type::BFV);
     PirParams pir_params;
 
     // Generates all parameters
@@ -30,12 +35,17 @@ int main(int argc, char *argv[]) {
     gen_params(number_of_items, size_per_item, N, logt, d, params, expanded_params, pir_params);
 
     // Create test database
-    uint8_t *db = (uint8_t *)malloc(number_of_items * size_per_item);
+    auto db(make_unique<uint8_t[]>(number_of_items * size_per_item));
+
+    // For testing purposes only
+    auto check_db(make_unique<uint8_t[]>(number_of_items * size_per_item));
 
     random_device rd;
     for (uint64_t i = 0; i < number_of_items; i++) {
         for (uint64_t j = 0; j < size_per_item; j++) {
-            *(db + (i * size_per_item) + j) = rd() % 256;
+            auto val = rd() % 256;
+            db.get()[(i * size_per_item) + j] = val;
+            check_db.get()[(i * size_per_item) + j] = val;
         }
     }
 
@@ -66,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     // Measure database setup
     auto time_pre_s = high_resolution_clock::now();
-    server.set_database(db, number_of_items, size_per_item);
+    server.set_database(move(db), number_of_items, size_per_item);
     server.preprocess_database();
     auto time_pre_e = high_resolution_clock::now();
     auto time_pre_us = duration_cast<microseconds>(time_pre_e - time_pre_s).count();
@@ -101,9 +111,9 @@ int main(int argc, char *argv[]) {
 
     // Check that we retrieved the correct element
     for (uint32_t i = 0; i < size_per_item; i++) {
-        if (elems[(offset * size_per_item) + i] != db[(ele_index * size_per_item) + i]) {
+        if (elems[(offset * size_per_item) + i] != check_db.get()[(ele_index * size_per_item) + i]) {
             cout << "elems " << (int)elems[(offset * size_per_item) + i] << ", db "
-                 << (int)db[(ele_index * size_per_item) + i] << endl;
+                 << check_db.get()[(ele_index * size_per_item) + i] << endl;
             cout << "PIR result wrong!" << endl;
             return -1;
         }

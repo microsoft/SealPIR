@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#define CIPHER_SIZE 32828
+#define CIPHER_SIZE 32841
 
 typedef std::vector<seal::Plaintext> Database;
 typedef std::vector<seal::Ciphertext> PirQuery;
@@ -60,7 +60,7 @@ void coeffs_to_bytes(std::uint32_t logtp, const seal::Plaintext &coeffs, std::ui
                      std::uint32_t size_out);
 
 // Takes a vector of coefficients and returns the corresponding FV plaintext
-void vector_to_plaintext(const vector<std::uint64_t> &coeffs, seal::Plaintext &plain);
+void vector_to_plaintext(const std::vector<std::uint64_t> &coeffs, seal::Plaintext &plain);
 
 // Since the database has d dimensions, and an item is a particular cell
 // in the d-dimensional hypercube, this function computes the corresponding
@@ -71,7 +71,7 @@ std::vector<std::uint64_t> compute_indices(std::uint64_t desiredIndex,
 // Serialize and deserialize ciphertexts to send them over the network
 std::vector<seal::Ciphertext> deserialize_ciphertexts(std::uint32_t count, std::string s,
                                                       std::uint32_t len_ciphertext);
-std::string serialize_ciphertexts(vector<seal::Ciphertext> c);
+std::string serialize_ciphertexts(std::vector<seal::Ciphertext> c);
 
 // Serialize and deserialize galois keys to send them over the network
 std::string serialize_galoiskeys(seal::GaloisKeys g);

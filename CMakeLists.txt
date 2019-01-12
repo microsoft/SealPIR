@@ -11,10 +11,9 @@ add_executable(sealpir
 	pir_server.cpp
 )
 
-find_package(SEAL 2.3.1 EXACT REQUIRED)
+find_package(SEAL 3.1.0 EXACT REQUIRED)
 find_package(Threads REQUIRED)
 
 target_link_libraries(sealpir 
 	SEAL::seal
-	Threads::Threads
 )

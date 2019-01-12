@@ -30,6 +30,7 @@ class PIRClient {
     std::unique_ptr<seal::Decryptor> decryptor_;
     std::unique_ptr<seal::Evaluator> evaluator_;
     std::unique_ptr<seal::KeyGenerator> keygen_;
+    std::shared_ptr<seal::SEALContext> newcontext_;
 
     seal::Ciphertext compose_to_ciphertext(std::vector<seal::Plaintext> plains);
 };
