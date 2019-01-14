@@ -15,15 +15,15 @@ using namespace seal;
 int main(int argc, char *argv[]) {
 
     // uint64_t number_of_items = 1 << 13;
-    // uint64_t number_of_items = 4096;
-    uint64_t number_of_items = 1 << 16;
+    uint64_t number_of_items = 128;
+    //uint64_t number_of_items = 1 << 16;
 
     uint64_t size_per_item = 288; // in bytes
     // uint64_t size_per_item = 1 << 10; // 1 KB.
     // uint64_t size_per_item = 10 << 10; // 10 KB.
 
     uint32_t N = 2048;
-    uint32_t logt = 20;
+    uint32_t logt = 15;
     uint32_t d = 1;
 
     EncryptionParameters params(scheme_type::BFV);
@@ -63,15 +63,17 @@ int main(int argc, char *argv[]) {
 
     // The following can be used to update parameters rather than creating new instances
     // (here it doesn't do anything).
-    cout << "Updating database size to: " << number_of_items << " elements" << endl;
+    // cout << "Updating database size to: " << number_of_items << " elements" << endl;
     // update_params(number_of_items, size_per_item, d, params, expanded_params, pir_params);
 
+    cout << "done" << endl;
 
 
     // Measure database setup
     auto time_pre_s = high_resolution_clock::now();
     server.set_database(move(db), number_of_items, size_per_item);
     server.preprocess_database();
+    cout << "database pre processed " << endl;
     auto time_pre_e = high_resolution_clock::now();
     auto time_pre_us = duration_cast<microseconds>(time_pre_e - time_pre_s).count();
 
@@ -85,11 +87,12 @@ int main(int argc, char *argv[]) {
     PirQuery query = client.generate_query(index);
     auto time_query_e = high_resolution_clock::now();
     auto time_query_us = duration_cast<microseconds>(time_query_e - time_query_s).count();
+    cout << "query generated" << endl;
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
-    PirQuery query_ser = deserialize_ciphertexts(d, serialize_ciphertexts(query), CIPHER_SIZE);
-    PirReply reply = server.generate_reply(query_ser, 0);
+    //PirQuery query_ser = deserialize_ciphertexts(d, serialize_ciphertexts(query), CIPHER_SIZE);
+    PirReply reply = server.generate_reply(query, 0, client);
     auto time_server_e = high_resolution_clock::now();
     auto time_server_us = duration_cast<microseconds>(time_server_e - time_server_s).count();
 

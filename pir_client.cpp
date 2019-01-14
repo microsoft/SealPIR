@@ -19,6 +19,27 @@ PIRClient::PIRClient(const EncryptionParameters &params,
 
     decryptor_ = make_unique<Decryptor>(newcontext_, secret_key);
     evaluator_ = make_unique<Evaluator>(newcontext_);
+
+    uint64_t t = params_.plain_modulus().value(); 
+    // 
+    int logt = floor(log2(params_.plain_modulus().value())); 
+    for(int i = 0; i < pir_params_.nvec.size(); i++){
+        uint64_t inverse_scale; 
+        int logm = ceil(log2(pir_params_.nvec[i]));  
+
+        int quo = logm / logt; 
+        int mod = logm % logt; 
+        inverse_scale = pow(2, logt - mod); 
+        if ((quo +1) %2 != 0){
+            inverse_scale =  params_.plain_modulus().value() - pow(2, logt - mod); 
+        }
+        inverse_scales_.push_back(inverse_scale); 
+        if ( (inverse_scale << logm)  % t != 1){
+            throw logic_error("something wrong"); 
+        }
+        cout << "logm, inverse scale, t = " << logm << ", " << inverse_scale << ", " << t << endl; 
+    }
+
 }
 
 // void PIRClient::update_parameters(const EncryptionParameters &expanded_params,
@@ -80,6 +101,8 @@ Plaintext PIRClient::decode_reply(PirReply reply) {
 
     vector<Ciphertext> temp = reply;
 
+    uint64_t t = params_.plain_modulus().value();
+
     for (uint32_t i = 0; i < recursion_level; i++) {
 
         vector<Ciphertext> newtemp;
@@ -88,6 +111,13 @@ Plaintext PIRClient::decode_reply(PirReply reply) {
         for (uint32_t j = 0; j < temp.size(); j++) {
             Plaintext ptxt;
             decryptor_->decrypt(temp[j], ptxt);
+            cout << " reply noise budget = " << decryptor_->invariant_noise_budget(temp[j]) << endl; 
+            // multiply by inverse_scale for every coefficient of ptxt
+            for(int h = 0; h < ptxt.coeff_count(); h++){
+                ptxt[h] *= inverse_scales_[i]; 
+                ptxt[h] %= t; 
+            }
+            cout << "decoded (and scaled) plaintext = " << ptxt.to_string() << endl;
             tempplain.push_back(ptxt);
 
 #ifdef DEBUG
@@ -123,11 +153,12 @@ GaloisKeys PIRClient::generate_galois_keys() {
     int N = params_.poly_modulus_degree();
     int logN = get_power_of_two(N);
 
+    cout << "printing galois elements...";
     for (int i = 0; i < logN; i++) {
         galois_elts.push_back((N + exponentiate_uint64(2, i)) / exponentiate_uint64(2, i));
-#ifdef DEBUG
+//#ifdef DEBUG
         cout << galois_elts.back() << ", ";
-#endif
+//#endif
     }
 
     return keygen_->galois_keys(pir_params_.dbc, galois_elts);

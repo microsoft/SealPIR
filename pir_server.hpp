@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include "pir_client.hpp"
 
 class PIRServer {
   public:
@@ -19,9 +20,9 @@ class PIRServer {
     void preprocess_database();
 
     std::vector<seal::Ciphertext> expand_query(
-            const seal::Ciphertext &encrypted, std::uint32_t m, uint32_t client_id);
+            const seal::Ciphertext &encrypted, std::uint32_t m, uint32_t client_id, PIRClient &client);
 
-    PirReply generate_reply(PirQuery query, std::uint32_t client_id);
+    PirReply generate_reply(PirQuery query, std::uint32_t client_id, PIRClient &client);
 
     void set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey);
 

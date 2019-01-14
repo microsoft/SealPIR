@@ -2,6 +2,9 @@
 
 #include "pir.hpp"
 #include <memory>
+#include <vector>
+
+using namespace std; 
 
 class PIRClient {
   public:
@@ -31,5 +34,9 @@ class PIRClient {
     std::unique_ptr<seal::KeyGenerator> keygen_;
     std::shared_ptr<seal::SEALContext> newcontext_;
 
+    vector<uint64_t> inverse_scales_; 
+
     seal::Ciphertext compose_to_ciphertext(std::vector<seal::Plaintext> plains);
+
+    friend class PIRServer;
 };
