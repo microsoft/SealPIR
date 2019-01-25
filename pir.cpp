@@ -65,6 +65,7 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
     uint32_t expansion_ratio = 0;
     for (uint32_t i = 0; i < params.coeff_modulus().size(); ++i) {
         double logqi = log2(params.coeff_modulus()[i].value());
+        cout << "PIR: logqi = " << logqi << endl; 
         expansion_ratio += ceil(logqi / logt);
     }
 
@@ -72,7 +73,7 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
     pir_params.dbc = 6;
     pir_params.n = plaintext_num;
     pir_params.nvec = nvec;
-    pir_params.expansion_ratio = expansion_ratio << 1;
+    pir_params.expansion_ratio = expansion_ratio << 1; // because one ciphertext = two polys
 }
 
 void update_params(uint64_t ele_num, uint64_t ele_size, uint32_t d, 
@@ -142,8 +143,8 @@ uint64_t coefficients_per_element(uint32_t logtp, uint64_t ele_size) {
 }
 
 // Number of database elements that can fit in a single FV plaintext
-uint64_t elements_per_ptxt(uint32_t logtp, uint64_t N, uint64_t ele_size) {
-    uint64_t coeff_per_ele = coefficients_per_element(logtp, ele_size);
+uint64_t elements_per_ptxt(uint32_t logt, uint64_t N, uint64_t ele_size) {
+    uint64_t coeff_per_ele = coefficients_per_element(logt, ele_size);
     uint64_t ele_per_ptxt = N / coeff_per_ele;
     assert(ele_per_ptxt > 0);
     return ele_per_ptxt;

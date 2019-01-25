@@ -10,13 +10,13 @@
 #define CIPHER_SIZE 32841
 
 typedef std::vector<seal::Plaintext> Database;
-typedef std::vector<seal::Ciphertext> PirQuery;
+typedef std::vector< std::vector< seal::Ciphertext >> PirQuery;
 typedef std::vector<seal::Ciphertext> PirReply;
 
 struct PirParams {
     std::uint64_t n;                 // number of plaintexts in database
-    std::uint32_t d;                 // number of dimensions for the database (usually 2)
-    std::uint32_t expansion_ratio;   // ratio of plaintext to ciphertext
+    std::uint32_t d;                 // number of dimensions for the database (1 or 2)
+    std::uint32_t expansion_ratio;   // ratio of ciphertext to plaintext
     std::uint32_t dbc;               // decomposition bit count (used by relinearization)
     std::vector<std::uint64_t> nvec; // size of each of the d dimensions
 };
