@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(SealPIR VERSION 1.1 LANGUAGES CXX)
+project(SealPIR VERSION 2.0 LANGUAGES CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
@@ -11,9 +11,7 @@ add_executable(sealpir
 	pir_server.cpp
 )
 
-find_package(SEAL 3.1.0 EXACT REQUIRED)
-find_package(Threads REQUIRED)
+find_package(SEAL 3.2.0 EXACT REQUIRED)
 
-target_link_libraries(sealpir 
-	SEAL::seal
+target_link_libraries(sealpir SEAL::seal
 )
