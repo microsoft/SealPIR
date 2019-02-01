@@ -14,17 +14,18 @@ using namespace seal;
 
 int main(int argc, char *argv[]) {
 
-    // uint64_t number_of_items = 1 << 13;
-    uint64_t number_of_items = 128;
-    //uint64_t number_of_items = 1 << 16;
+    //uint64_t number_of_items = 1 << 11;
+    //uint64_t number_of_items = 2048;
+    uint64_t number_of_items = 1 << 20;
 
     uint64_t size_per_item = 288; // in bytes
     // uint64_t size_per_item = 1 << 10; // 1 KB.
     // uint64_t size_per_item = 10 << 10; // 10 KB.
 
     uint32_t N = 2048;
-    uint32_t logt = 15;
-    uint32_t d = 1;
+    // Recommended values: (logt, d) = (12, 2) or (8, 1). 
+    uint32_t logt = 12; 
+    uint32_t d = 2;
 
     EncryptionParameters params(scheme_type::BFV);
     PirParams pir_params;
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
     GaloisKeys galois_keys = client.generate_galois_keys();
 
     // Set galois key
-    cout << "Setting Galois keys" << endl;
+    cout << "Main: Setting Galois keys...";
     server.set_galois_key(0, galois_keys);
 
 
@@ -79,15 +80,18 @@ int main(int argc, char *argv[]) {
 
     // Choose an index of an element in the DB
     uint64_t ele_index = rd() % number_of_items; // element in DB at random position
+    //uint64_t ele_index = 35; 
+    cout << "Main: element index = " << ele_index << " from [0, " << number_of_items -1 << "]" << endl;
     uint64_t index = client.get_fv_index(ele_index, size_per_item);   // index of FV plaintext
     uint64_t offset = client.get_fv_offset(ele_index, size_per_item); // offset in FV plaintext
-
     // Measure query generation
+    cout << "Main: FV index = " << index << ", FV offset = " << offset << endl; 
+
     auto time_query_s = high_resolution_clock::now();
     PirQuery query = client.generate_query(index);
     auto time_query_e = high_resolution_clock::now();
     auto time_query_us = duration_cast<microseconds>(time_query_e - time_query_s).count();
-    cout << "query generated" << endl;
+    cout << "Main: query generated" << endl;
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
@@ -105,6 +109,18 @@ int main(int argc, char *argv[]) {
     // Convert to elements
     vector<uint8_t> elems(N * logt / 8);
     coeffs_to_bytes(logt, result, elems.data(), (N * logt) / 8);
+    // cout << "printing the bytes...of the supposed item: "; 
+    // for (int i = 0; i < size_per_item; i++){
+    //     cout << (int) elems[offset*size_per_item + i] << ", "; 
+    // }
+    // cout << endl; 
+
+    // // cout << "offset = " << offset << endl; 
+
+    // cout << "printing the bytes of real item: "; 
+    // for (int i = 0; i < size_per_item; i++){
+    //     cout << (int) check_db.get()[ele_index *size_per_item + i] << ", "; 
+    // }
 
     // Check that we retrieved the correct element
     for (uint32_t i = 0; i < size_per_item; i++) {
@@ -118,7 +134,7 @@ int main(int argc, char *argv[]) {
 
     // Output results
     cout << "PIRServer pre-processing time: " << time_pre_us / 1000 << " ms" << endl;
-    cout << "PIRServer query processing generation time: " << time_server_us / 1000 << " ms"
+    cout << "PIRServer reply generation time: " << time_server_us / 1000 << " ms"
          << endl;
     cout << "PIRClient query generation time: " << time_query_us / 1000 << " ms" << endl;
     cout << "PIRClient answer decode time: " << time_decode_us / 1000 << " ms" << endl;

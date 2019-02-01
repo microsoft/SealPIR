@@ -23,6 +23,8 @@ class PIRClient {
     uint64_t get_fv_index(uint64_t element_idx, uint64_t ele_size);
     uint64_t get_fv_offset(uint64_t element_idx, uint64_t ele_size);
 
+    void compute_inverse_scales(); 
+
   private:
     // Should we store a decryptor and an encryptor?
     seal::EncryptionParameters params_;
@@ -34,6 +36,7 @@ class PIRClient {
     std::unique_ptr<seal::KeyGenerator> keygen_;
     std::shared_ptr<seal::SEALContext> newcontext_;
 
+    vector<uint64_t> indices_; // the indices for retrieval. 
     vector<uint64_t> inverse_scales_; 
 
     seal::Ciphertext compose_to_ciphertext(std::vector<seal::Plaintext> plains);
