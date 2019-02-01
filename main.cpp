@@ -34,6 +34,8 @@ int main(int argc, char *argv[]) {
     cout << "Generating all parameters" << endl;
     gen_params(number_of_items, size_per_item, N, logt, d, params, pir_params);
 
+    cout << "This may take some time ..." << endl;
+
     // Create test database
     auto db(make_unique<uint8_t[]>(number_of_items * size_per_item));
 
