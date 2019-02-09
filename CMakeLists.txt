@@ -11,7 +11,7 @@ add_executable(sealpir
 	pir_server.cpp
 )
 
-find_package(SEAL 3.2.0 EXACT REQUIRED)
+find_package(SEAL 3.1.0 EXACT REQUIRED)
 
 target_link_libraries(sealpir SEAL::seal
 )

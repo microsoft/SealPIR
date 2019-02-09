@@ -5,11 +5,11 @@ SealPIR is a (research) library and should not be used in production systems. Se
 
 # Compiling SEAL
 
-SealPIR depends on Microsoft SEAL version 3.2 ([link](https://www.microsoft.com/en-us/research/project/simple-encrypted-arithmetic-library/)). Download Microsoft SEAL, and follow the instructions in README.md to install it system-wide.
+SealPIR depends on Microsoft SEAL version 3.1.0 ([link](https://www.microsoft.com/en-us/research/project/simple-encrypted-arithmetic-library/)). Download Microsoft SEAL from [GitHub](https://GitHub.com/Microsoft/SEAL), and follow the instructions in README.md to install it system-wide.
 
 # Compiling SealPIR
 
-Once Microsoft SEAL 3.2 is installed, to build SealPIR simply run:
+Once Microsoft SEAL 3.1.0 is installed, to build SealPIR simply run:
 
 	cmake .
 	make
