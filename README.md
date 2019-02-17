@@ -18,7 +18,8 @@ This should produce a binary file ``bin/sealpir``.
 
 # Using SealPIR
 
-Take a look at the example in main.cpp for how to use SealPIR.
+Take a look at the example in main.cpp for how to use SealPIR. 
+Note: the parameter "d" stands for recursion levels, and for the current configuration, the server-to-client reply has size (pow(10, d-1) * 32) KB. Therefore we recommend using d <= 3.  
 
 # Contributing
 
