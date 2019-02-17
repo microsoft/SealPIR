@@ -178,7 +178,7 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, PIRClient
 
         uint64_t n_i = nvec[i];
         cout << "Server: n_i = " << n_i << endl; 
-        cout << "Server: expanding " << query[i].size() << "query ctxts" << endl;
+        cout << "Server: expanding " << query[i].size() << " query ctxts" << endl;
         for (uint32_t j = 0; j < query[i].size(); j++){
             uint64_t total = N; 
             if (j == query[i].size() - 1){

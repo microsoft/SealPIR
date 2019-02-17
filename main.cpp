@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
     //uint64_t number_of_items = 1 << 11;
     //uint64_t number_of_items = 2048;
-    uint64_t number_of_items = 1 << 20;
+    uint64_t number_of_items = 1 << 12;
 
     uint64_t size_per_item = 288; // in bytes
     // uint64_t size_per_item = 1 << 10; // 1 KB.
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     uint32_t N = 2048;
     // Recommended values: (logt, d) = (12, 2) or (8, 1). 
     uint32_t logt = 12; 
-    uint32_t d = 2;
+    uint32_t d = 5;
 
     EncryptionParameters params(scheme_type::BFV);
     PirParams pir_params;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     cout << "Generating all parameters" << endl;
     gen_params(number_of_items, size_per_item, N, logt, d, params, pir_params);
 
-    cout << "This may take some time ..." << endl;
+    cout << "Initializing the database (this may take some time) ..." << endl;
 
     // Create test database
     auto db(make_unique<uint8_t[]>(number_of_items * size_per_item));
@@ -135,6 +135,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Output results
+    cout << "PIR reseult correct!" << endl;
     cout << "PIRServer pre-processing time: " << time_pre_us / 1000 << " ms" << endl;
     cout << "PIRServer reply generation time: " << time_server_us / 1000 << " ms"
          << endl;

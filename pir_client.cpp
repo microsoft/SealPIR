@@ -86,10 +86,14 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
         for (uint32_t j =0; j < num_ptxts; j++){
             pt.set_zero();
             if (indices_[i] > N*(j+1) || indices_[i] < N*j){
+#ifdef DEBUG
                 cout << "Client: coming here: so just encrypt zero." << endl; 
+#endif 
                 // just encrypt zero
             } else{
+#ifdef DEBUG
                 cout << "Client: encrypting a real thing " << endl; 
+#endif 
                 uint64_t real_index = indices_[i] - N*j; 
                 pt[real_index] = 1;
             }
@@ -137,10 +141,12 @@ Plaintext PIRClient::decode_reply(PirReply reply) {
         for (uint32_t j = 0; j < temp.size(); j++) {
             Plaintext ptxt;
             decryptor_->decrypt(temp[j], ptxt);
+#ifdef DEBUG
             cout << "Client: reply noise budget = " << decryptor_->invariant_noise_budget(temp[j]) << endl; 
+#endif
             // multiply by inverse_scale for every coefficient of ptxt
             for(int h = 0; h < ptxt.coeff_count(); h++){
-                ptxt[h] *= inverse_scales_[i]; 
+                ptxt[h] *= inverse_scales_[recursion_level -  1 - i]; 
                 ptxt[h] %= t; 
             }
             //cout << "decoded (and scaled) plaintext = " << ptxt.to_string() << endl;
@@ -155,6 +161,7 @@ Plaintext PIRClient::decode_reply(PirReply reply) {
                 // Combine into one ciphertext.
                 Ciphertext combined = compose_to_ciphertext(tempplain);
                 newtemp.push_back(combined);
+                tempplain.clear();
                 // cout << "Client: const term of ciphertext = " << combined[0] << endl; 
             }
         }
