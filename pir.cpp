@@ -52,7 +52,7 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
 
     for (uint32_t i = 0; i < 1; i++) {
         coeff_mod_array.emplace_back(SmallModulus());
-        coeff_mod_array[i] = small_mods_60bit(i);
+        coeff_mod_array[i] = DefaultParams::small_mods_60bit(i);
         logq += coeff_mod_array[i].bit_count();
     }
 
