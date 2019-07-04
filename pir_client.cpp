@@ -19,54 +19,8 @@ PIRClient::PIRClient(const EncryptionParameters &params,
 
     decryptor_ = make_unique<Decryptor>(newcontext_, secret_key);
     evaluator_ = make_unique<Evaluator>(newcontext_);
-
-    uint64_t t = params_.plain_modulus().value(); 
-
-    uint64_t N = params_.poly_modulus_degree(); 
-
-
-    // 
-    // int logt = floor(log2(params_.plain_modulus().value())); 
-
-    // for(int i = 0; i < pir_params_.nvec.size(); i++){
-    //     uint64_t inverse_scale; 
-    //     // 
-    //     // If the number of items are less than N, then 
-    //     // we use logm.
-    //     int logm = ceil(log2(min(N, pir_params_.nvec[i])));  // if nvec > n what do we do?
-
-    //     int quo = logm / logt; 
-    //     int mod = logm % logt; 
-    //     inverse_scale = pow(2, logt - mod); 
-    //     if ((quo +1) %2 != 0){
-    //         inverse_scale =  params_.plain_modulus().value() - pow(2, logt - mod); 
-    //     }
-    //     inverse_scales_.push_back(inverse_scale); 
-    //     if ( (inverse_scale << logm)  % t != 1){
-    //         throw logic_error("something wrong"); 
-    //     }
-    //     cout << "logm, inverse scale, t = " << logm << ", " << inverse_scale << ", " << t << endl; 
-    // }
 }
 
-// void PIRClient::update_parameters(const EncryptionParameters &expanded_params,
-//                                   const PirParams &pir_params) 
-// {
-
-//     // The only thing that can change is the plaintext modulus and pir_params
-//     assert(expanded_params.poly_modulus_degree() == params_.poly_modulus_degree());
-//     assert(expanded_params.coeff_modulus() == params_.coeff_modulus());
-
-//     params_ = expanded_params;
-//     pir_params_ = pir_params;
-//     auto newcontext = SEALContext::Create(expanded_params);
-
-//     SecretKey secret_key = keygen_->secret_key();
-//     secret_key.parms_id() = expanded_params.parms_id();
-
-//     decryptor_ = make_unique<Decryptor>(newcontext, secret_key);
-//     evaluator_ = make_unique<Evaluator>(newcontext);
-// }
 
 PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
 
@@ -79,7 +33,7 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
 
     Plaintext pt(params_.poly_modulus_degree());
     for (uint32_t i = 0; i < indices_.size(); i++) {
-        uint32_t num_ptxts = ceil( (pir_params_.nvec[i] +0.0) / N);
+        uint32_t num_ptxts = ceil( (pir_params_.nvec[i] + 0.0) / N);
         // initialize result. 
         cout << "Client: index " << i + 1  <<  "/ " <<  indices_.size() << " = " << indices_[i] << endl; 
         cout << "Client: number of ctxts needed for query = " << num_ptxts << endl;
@@ -102,8 +56,6 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
             dest.parms_id() = params_.parms_id();
             result[i].push_back(dest);
         }   
-        
-
     }
 
     return result;
@@ -292,9 +244,5 @@ void PIRClient::compute_inverse_scales(){
         }
         cout << "Client: logm, inverse scale, t = " << logm << ", " << inverse_scale << ", " << t << endl; 
     }
-
-
-
-
 }
 

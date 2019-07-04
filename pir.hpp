@@ -29,11 +29,6 @@ void gen_params(std::uint64_t ele_num,  // number of elements (not FV plaintexts
                 seal::EncryptionParameters &params,
                 PirParams &pir_params);
 
-void update_params(std::uint64_t ele_num, 
-                   std::uint64_t ele_size,
-                   std::uint32_t d,
-                   const seal::EncryptionParameters &old_params, PirParams &pir_params);
-
 // returns the plaintext modulus after expansion
 std::uint32_t plainmod_after_expansion(std::uint32_t logt, std::uint32_t N, 
                                        std::uint32_t d, std::uint64_t ele_num,

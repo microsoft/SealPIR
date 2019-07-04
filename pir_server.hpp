@@ -10,9 +10,6 @@ class PIRServer {
   public:
     PIRServer(const seal::EncryptionParameters &params, const PirParams &pir_params);
 
-    //void update_parameters(const seal::EncryptionParameters &expanded_params,
-    //                       const PirParams &pir_params);
-
     // NOTE: server takes over ownership of db and frees it when it exits.
     // Caller cannot free db
     void set_database(std::unique_ptr<std::vector<seal::Plaintext>> &&db);
@@ -28,9 +25,7 @@ class PIRServer {
 
   private:
     seal::EncryptionParameters params_; // SEAL parameters
-
-    //seal::EncryptionParameters expanded_params_; // SEAL parameters
-    PirParams pir_params_;                       // PIR parameters
+    PirParams pir_params_;              // PIR parameters
     std::unique_ptr<Database> db_;
     bool is_db_preprocessed_;
     std::map<int, seal::GaloisKeys> galoisKeys_;
