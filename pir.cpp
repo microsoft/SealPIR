@@ -212,6 +212,7 @@ inline Ciphertext deserialize_ciphertext(string s) {
     return c;
 }
 
+
 vector<Ciphertext> deserialize_ciphertexts(uint32_t count, string s, uint32_t len_ciphertext) {
     vector<Ciphertext> c;
     for (uint32_t i = 0; i < count; i++) {
@@ -219,6 +220,19 @@ vector<Ciphertext> deserialize_ciphertexts(uint32_t count, string s, uint32_t le
     }
     return c;
 }
+
+PirQuery deserialize_query(uint32_t d, uint32_t count, string s, uint32_t len_ciphertext) {
+    vector<vector<Ciphertext>> c;
+    for (uint32_t i = 0; i < d; i++) {
+        c.push_back(deserialize_ciphertexts(
+              count, 
+              s.substr(i * count * len_ciphertext, count * len_ciphertext),
+              len_ciphertext)
+        );
+    }
+    return c;
+}
+
 
 inline string serialize_ciphertext(Ciphertext c) {
     std::ostringstream output;
@@ -230,6 +244,16 @@ string serialize_ciphertexts(vector<Ciphertext> c) {
     string s;
     for (uint32_t i = 0; i < c.size(); i++) {
         s.append(serialize_ciphertext(c[i]));
+    }
+    return s;
+}
+
+string serialize_query(vector<vector<Ciphertext>> c) {
+    string s;
+    for (uint32_t i = 0; i < c.size(); i++) {
+      for (uint32_t j = 0; j < c[i].size(); j++) {
+        s.append(serialize_ciphertext(c[i][j]));
+      }
     }
     return s;
 }

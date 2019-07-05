@@ -10,7 +10,7 @@
 #define CIPHER_SIZE 32841
 
 typedef std::vector<seal::Plaintext> Database;
-typedef std::vector< std::vector< seal::Ciphertext >> PirQuery;
+typedef std::vector<std::vector<seal::Ciphertext>> PirQuery;
 typedef std::vector<seal::Ciphertext> PirReply;
 
 struct PirParams {
@@ -63,9 +63,11 @@ std::vector<std::uint64_t> compute_indices(std::uint64_t desiredIndex,
                                            std::vector<std::uint64_t> nvec);
 
 // Serialize and deserialize ciphertexts to send them over the network
+PirQuery deserialize_query(std::uint32_t d, uint32_t count, std::string s, std::uint32_t len_ciphertext);
 std::vector<seal::Ciphertext> deserialize_ciphertexts(std::uint32_t count, std::string s,
                                                       std::uint32_t len_ciphertext);
 std::string serialize_ciphertexts(std::vector<seal::Ciphertext> c);
+std::string serialize_query(std::vector<std::vector<seal::Ciphertext>> c);
 
 // Serialize and deserialize galois keys to send them over the network
 std::string serialize_galoiskeys(seal::GaloisKeys g);

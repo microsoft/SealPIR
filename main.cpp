@@ -82,7 +82,8 @@ int main(int argc, char *argv[]) {
     cout << "Main: query generated" << endl;
 
     //To marshall query to send over the network, you can use serialize/deserialize:
-    //PirQuery query = deserialize_ciphertexts(d, serialize_ciphertexts(query), CIPHER_SIZE);
+    //std::string query_ser = serialize_query(query);
+    //PirQuery query2 = deserialize_query(d, 1, query_ser, CIPHER_SIZE);
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
