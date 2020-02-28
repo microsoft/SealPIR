@@ -11,9 +11,6 @@ class PIRClient {
     PIRClient(const seal::EncryptionParameters &parms,
                const PirParams &pirparms);
 
-    //void update_parameters(const seal::EncryptionParameters &expandedParams,
-    //                       const PirParams &pirparms);
-
     PirQuery generate_query(std::uint64_t desiredIndex);
     seal::Plaintext decode_reply(PirReply reply);
 
@@ -26,7 +23,6 @@ class PIRClient {
     void compute_inverse_scales(); 
 
   private:
-    // Should we store a decryptor and an encryptor?
     seal::EncryptionParameters params_;
     PirParams pir_params_;
 

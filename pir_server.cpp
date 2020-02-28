@@ -14,25 +14,6 @@ PIRServer::PIRServer(const EncryptionParameters &params, const PirParams &pir_pa
     evaluator_ = make_unique<Evaluator>(context);
 }
 
-// void PIRServer::update_parameters(const EncryptionParameters &expanded_params,
-//                                   const PirParams &pir_params) {
-
-//     // The only thing that can change is the plaintext modulus and pir_params
-//     assert(expanded_params.poly_modulus_degree() == params_.poly_modulus_degree());
-//     assert(expanded_params.coeff_modulus() == params_.coeff_modulus());
-
-//     params_ = expanded_params;
-//     pir_params_ = pir_params;
-//     auto context = SEALContext::Create(expanded_params);
-//     evaluator_ = make_unique<Evaluator>(context);
-//     is_db_preprocessed_ = false;
-
-//     // Update all the galois keys
-//     for (std::pair<const int, GaloisKeys> &key : galoisKeys_) {
-//         key.second.parms_id() = params_.parms_id();
-//     }
-// }
-
 void PIRServer::preprocess_database() {
     if (!is_db_preprocessed_) {
 
@@ -84,10 +65,7 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     assert(coeff_per_ptxt <= N);
 
     cout << "Server: total number of FV plaintext = " << total << endl;
-
     cout << "Server: elements packed into each plaintext " << ele_per_ptxt << endl; 
-
-
 
     uint32_t offset = 0;
 
@@ -102,6 +80,7 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
         } else {
             process_bytes = bytes_per_ptxt;
         }
+
         // Get the coefficients of the elements that will be packed in plaintext i
         vector<uint64_t> coefficients = bytes_to_coeffs(logt, bytes.get() + offset, process_bytes);
         offset += process_bytes;
@@ -148,7 +127,7 @@ void PIRServer::set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey)
     galoisKeys_[client_id] = galkey;
 }
 
-PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, PIRClient &client) {
+PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id) {
 
     vector<uint64_t> nvec = pir_params_.nvec;
     uint64_t product = 1;
@@ -185,7 +164,7 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, PIRClient
                 total = n_i % N; 
             }
             cout << "-- expanding one query ctxt into " << total  << " ctxts "<< endl;
-            vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id, client);
+            vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id);
             expanded_query.insert(expanded_query.end(), std::make_move_iterator(expanded_query_part.begin()), 
                     std::make_move_iterator(expanded_query_part.end()));
             expanded_query_part.clear(); 
@@ -229,9 +208,6 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, PIRClient
         vector<Ciphertext> intermediateCtxts(product);
         Ciphertext temp;
 
-
-
-
         for (uint64_t k = 0; k < product; k++) {
 
             evaluator_->multiply_plain(expanded_query[0], (*cur)[k], intermediateCtxts[k]);
@@ -247,8 +223,6 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, PIRClient
             // print intermediate ctxts? 
             //cout << "const term of ctxt " << jj << " = " << intermediateCtxts[jj][0] << endl; 
         }
-
-
 
         if (i == nvec.size() - 1) {
             return intermediateCtxts;
@@ -284,7 +258,7 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, PIRClient
 }
 
 inline vector<Ciphertext> PIRServer::expand_query(const Ciphertext &encrypted, uint32_t m,
-                                           uint32_t client_id, PIRClient &client) {
+                                           uint32_t client_id) {
 
 #ifdef DEBUG
     uint64_t plainMod = params_.plain_modulus().value();
@@ -319,7 +293,6 @@ inline vector<Ciphertext> PIRServer::expand_query(const Ciphertext &encrypted, u
         // temp[a] = (j0 = a (mod 2**i) ? ) : Enc(x^{j0 - a}) else Enc(0).  With
         // some scaling....
         int index_raw = (n << 1) - (1 << i);
-        // TODO: galois elements. 
         int index = (index_raw * galois_elts[i]) % (n << 1);
 
         for (uint32_t a = 0; a < temp.size(); a++) {
@@ -327,7 +300,6 @@ inline vector<Ciphertext> PIRServer::expand_query(const Ciphertext &encrypted, u
             evaluator_->apply_galois(temp[a], galois_elts[i], galkey, tempctxt_rotated);
 
             //cout << "rotate " << client.decryptor_->invariant_noise_budget(tempctxt_rotated) << ", "; 
-
 
             evaluator_->add(temp[a], tempctxt_rotated, newtemp[a]);
             multiply_power_of_X(temp[a], tempctxt_shifted, index_raw);

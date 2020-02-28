@@ -76,44 +76,6 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
     pir_params.expansion_ratio = expansion_ratio << 1; // because one ciphertext = two polys
 }
 
-void update_params(uint64_t ele_num, uint64_t ele_size, uint32_t d, 
-                   const EncryptionParameters &old_params, EncryptionParameters &expanded_params, 
-                   PirParams &pir_params) {
-
-    uint32_t logt = ceil(log2(old_params.plain_modulus().value()));
-    uint32_t N = old_params.poly_modulus_degree();
-
-    // Determine the maximum size of each dimension
-    uint32_t logtp = plainmod_after_expansion(logt, N, d, ele_num, ele_size);
-
-    uint64_t expanded_plain_mod = static_cast<uint64_t>(1) << logtp;
-    uint64_t plaintext_num = plaintexts_per_db(logtp, N, ele_num, ele_size);
-
-#ifdef DEBUG
-    cout << "log(plain mod) before expand = " << logt << endl;
-    cout << "log(plain mod) after expand = " << logtp << endl;
-    cout << "number of FV plaintexts = " << plaintext_num << endl;
-#endif
-
-    expanded_params.set_poly_modulus_degree(old_params.poly_modulus_degree());
-    expanded_params.set_coeff_modulus(old_params.coeff_modulus());
-    expanded_params.set_plain_modulus(expanded_plain_mod);
-
-    // Assumes dimension of database is 2
-    vector<uint64_t> nvec = get_dimensions(plaintext_num, d);
-
-    uint32_t expansion_ratio = 0;
-    for (uint32_t i = 0; i < old_params.coeff_modulus().size(); ++i) {
-        double logqi = log2(old_params.coeff_modulus()[i].value());
-        expansion_ratio += ceil(logqi / logtp);
-    }
-
-    pir_params.d = d;
-    pir_params.dbc = 6;
-    pir_params.n = plaintext_num;
-    pir_params.nvec = nvec;
-    pir_params.expansion_ratio = expansion_ratio << 1;
-}
 
 uint32_t plainmod_after_expansion(uint32_t logt, uint32_t N, uint32_t d, 
         uint64_t ele_num, uint64_t ele_size) {
@@ -250,6 +212,7 @@ inline Ciphertext deserialize_ciphertext(string s) {
     return c;
 }
 
+
 vector<Ciphertext> deserialize_ciphertexts(uint32_t count, string s, uint32_t len_ciphertext) {
     vector<Ciphertext> c;
     for (uint32_t i = 0; i < count; i++) {
@@ -257,6 +220,19 @@ vector<Ciphertext> deserialize_ciphertexts(uint32_t count, string s, uint32_t le
     }
     return c;
 }
+
+PirQuery deserialize_query(uint32_t d, uint32_t count, string s, uint32_t len_ciphertext) {
+    vector<vector<Ciphertext>> c;
+    for (uint32_t i = 0; i < d; i++) {
+        c.push_back(deserialize_ciphertexts(
+              count, 
+              s.substr(i * count * len_ciphertext, count * len_ciphertext),
+              len_ciphertext)
+        );
+    }
+    return c;
+}
+
 
 inline string serialize_ciphertext(Ciphertext c) {
     std::ostringstream output;
@@ -268,6 +244,16 @@ string serialize_ciphertexts(vector<Ciphertext> c) {
     string s;
     for (uint32_t i = 0; i < c.size(); i++) {
         s.append(serialize_ciphertext(c[i]));
+    }
+    return s;
+}
+
+string serialize_query(vector<vector<Ciphertext>> c) {
+    string s;
+    for (uint32_t i = 0; i < c.size(); i++) {
+      for (uint32_t j = 0; j < c[i].size(); j++) {
+        s.append(serialize_ciphertext(c[i][j]));
+      }
     }
     return s;
 }

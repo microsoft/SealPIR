@@ -1,11 +1,15 @@
 # SealPIR: A computational PIR library that achieves low communication costs and high performance.
 
-SealPIR is a (research) library and should not be used in production systems. SealPIR allows a client to download an element from a database stored by a server without revealing which element was downloaded. SealPIR was introduced in our [paper](https://eprint.iacr.org/2017/1142.pdf).
-
+SealPIR is a research library and should not be used in production systems. 
+SealPIR allows a client to download an element from a database stored by a server without
+revealing which element was downloaded. SealPIR was introduced at 
+the Symposium on Security and Privacy (Oakland) in 2018. You can find
+a copy of the paper [here](https://eprint.iacr.org/2017/1142.pdf).
 
 # Compiling SEAL
 
-SealPIR depends on Microsoft SEAL version 3.2.0 ([link](https://www.microsoft.com/en-us/research/project/microsoft-seal)). Download Microsoft SEAL from [GitHub](https://GitHub.com/Microsoft/SEAL), and follow the instructions in README.md to install it system-wide.
+SealPIR depends on [Microsoft SEAL version 3.2.0](https://github.com/microsoft/SEAL/tree/3.2.0).
+Install SEAL before compiling SealPIR.
 
 # Compiling SealPIR
 
@@ -19,7 +23,8 @@ This should produce a binary file ``bin/sealpir``.
 # Using SealPIR
 
 Take a look at the example in main.cpp for how to use SealPIR. 
-Note: the parameter "d" stands for recursion levels, and for the current configuration, the server-to-client reply has size (pow(10, d-1) * 32) KB. Therefore we recommend using d <= 3.  
+Note: the parameter "d" stands for recursion levels, and for the current configuration, the 
+server-to-client reply has size (pow(10, d-1) * 32) KB. Therefore we recommend using d <= 3.  
 
 # Contributing
 
