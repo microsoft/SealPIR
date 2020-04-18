@@ -22,4 +22,4 @@ find_package(SEAL 3.2.0 EXACT REQUIRED)
 target_link_libraries(main sealpir SEAL::seal)
 
 install(TARGETS sealpir ARCHIVE DESTINATION lib LIBRARY DESTINATION lib)
-install(FILES pir.hpp pir_client.hpp pir_server.hpp DESTINATION include)
+install(FILES pir.hpp pir_client.hpp pir_server.hpp DESTINATION include/sealpir)
