@@ -161,7 +161,7 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id) {
         for (uint32_t j = 0; j < query[i].size(); j++){
             uint64_t total = N; 
             if (j == query[i].size() - 1){
-                total = n_i % N; 
+                total = ((n_i - 1) % N) + 1; 
             }
             cout << "-- expanding one query ctxt into " << total  << " ctxts "<< endl;
             vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id);
