@@ -42,9 +42,6 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     uint32_t logt = floor(log2(params_.plain_modulus().value()));
     uint32_t N = params_.poly_modulus_degree();
 
-    cout << "logt: " << logt << endl << "N: " << N << endl <<
-    "ele_num: " << ele_num << endl << "ele_size: " << ele_size << endl;
-
     // number of FV plaintexts needed to represent all elements
     uint64_t total = plaintexts_per_db(logt, N, ele_num, ele_size);
 
@@ -54,8 +51,6 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
         prod *= pir_params_.nvec[i];
     }
     uint64_t matrix_plaintexts = prod;
-    cout << "Total:" << total << endl << "Prod: "
-     << matrix_plaintexts << endl;
 
     assert(total <= matrix_plaintexts);
 
@@ -166,7 +161,7 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id) {
         for (uint32_t j = 0; j < query[i].size(); j++){
             uint64_t total = N; 
             if (j == query[i].size() - 1){
-                total = ((n_i - 1) % N) + 1; 
+                total = n_i % N;
             }
             cout << "-- expanding one query ctxt into " << total  << " ctxts "<< endl;
             vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id);
@@ -338,11 +333,6 @@ inline vector<Ciphertext> PIRServer::expand_query(const Ciphertext &encrypted, u
     vector<Ciphertext>::const_iterator first = newtemp.begin();
     vector<Ciphertext>::const_iterator last = newtemp.begin() + m;
     vector<Ciphertext> newVec(first, last);
-
-    for(Ciphertext c: newVec){
-
-    }
-
 
     return newVec;
 }
