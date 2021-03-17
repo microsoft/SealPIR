@@ -8,8 +8,8 @@ using namespace std;
 
 class PIRClient {
   public:
-    PIRClient(const seal::EncryptionParameters &parms,
-               const PirParams &pirparms);
+    PIRClient(const seal::EncryptionParameters &encparms,
+               const PirParams &pirparams);
 
     PirQuery generate_query(std::uint64_t desiredIndex);
     seal::Plaintext decode_reply(PirReply reply);
@@ -22,14 +22,14 @@ class PIRClient {
 
 
   private:
-    seal::EncryptionParameters params_;
+    seal::EncryptionParameters enc_params_;
     PirParams pir_params_;
 
     std::unique_ptr<seal::Encryptor> encryptor_;
     std::unique_ptr<seal::Decryptor> decryptor_;
     std::unique_ptr<seal::Evaluator> evaluator_;
     std::unique_ptr<seal::KeyGenerator> keygen_;
-    std::shared_ptr<seal::SEALContext> newcontext_;
+    std::shared_ptr<seal::SEALContext> context_;
 
     vector<uint64_t> indices_; // the indices for retrieval. 
     vector<uint64_t> inverse_scales_; 
