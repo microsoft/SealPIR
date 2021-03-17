@@ -20,9 +20,6 @@ class PIRClient {
     uint64_t get_fv_index(uint64_t element_idx, uint64_t ele_size);
     uint64_t get_fv_offset(uint64_t element_idx, uint64_t ele_size);
 
-    seal::Ciphertext get_encrypted_one();
-    seal::Plaintext decrypt(seal::Ciphertext ct);
-
 
   private:
     seal::EncryptionParameters params_;

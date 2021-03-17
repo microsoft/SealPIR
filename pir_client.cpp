@@ -210,17 +210,3 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
 
     return result;
 }
-
-Ciphertext PIRClient::get_encrypted_one(){
-    Ciphertext one_ct;
-    Plaintext one("1");
-    encryptor_->encrypt(one, one_ct);
-    return one_ct;
-}
-
-
-Plaintext PIRClient::decrypt(seal::Ciphertext ct){
-    Plaintext result;
-    decryptor_->decrypt(ct, result);
-    return result;
-}

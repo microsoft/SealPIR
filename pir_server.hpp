@@ -20,8 +20,6 @@ class PIRServer {
             const seal::Ciphertext &encrypted, std::uint32_t m, uint32_t client_id, const PIRClient& client);
 
     PirReply generate_reply(PirQuery query, std::uint32_t client_id, const PIRClient& client);
-    
-    seal::Ciphertext generate_public_reply(seal::Ciphertext one_ct, std::uint64_t desiredIndex);
 
     void set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey);
 

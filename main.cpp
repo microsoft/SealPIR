@@ -97,28 +97,11 @@ int main(int argc, char *argv[]) {
     auto time_decode_e = chrono::high_resolution_clock::now();
     auto time_decode_us = duration_cast<microseconds>(time_decode_e - time_decode_s).count();
 
-    Ciphertext one_ct = client.get_encrypted_one();
-    Ciphertext reply2 = server.generate_public_reply(one_ct, index);
-    Plaintext result2 = client.decrypt(reply2);
-
     logt = floor(log2(params.plain_modulus().value()));
 
     // Convert from FV plaintext (polynomial) to database element at the client
     vector<uint8_t> elems(N * logt / 8);
     coeffs_to_bytes(logt, result, elems.data(), (N * logt) / 8);
-
-    vector<uint8_t> elems2(N * logt / 8);
-    coeffs_to_bytes(logt, result2, elems2.data(), (N * logt) / 8);
-
-    // Check that we retrieved the correct element
-    for (uint32_t i = 0; i < size_per_item; i++) {
-        if (elems[(offset * size_per_item) + i] != elems2[(offset * size_per_item) + i]) {
-            cout << "Main: elems " << (int)elems[(offset * size_per_item) + i] << ", elems2 "
-                 << (int)elems[(offset * size_per_item) + i] << endl;
-            cout << "Main: PIR results inconsistent at" << i << endl;
-            return -1;
-        }
-    }
 
     bool failed = false;
     // Check that we retrieved the correct element

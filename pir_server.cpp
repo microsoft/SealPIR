@@ -266,17 +266,6 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, const PIR
     return fail;
 }
 
-Ciphertext PIRServer::generate_public_reply(Ciphertext one_ct, std::uint64_t desiredIndex){
-    vector<Plaintext> *cur = db_.get();
-    Ciphertext result;
-    evaluator_->transform_to_ntt_inplace(one_ct);
-    cout << "transformed" << endl;
-    evaluator_->multiply_plain(one_ct, (*cur)[desiredIndex], result);
-    cout << "reply generated" << endl;
-    evaluator_->transform_from_ntt_inplace(result);
-    return result;
-}
-
 inline vector<Ciphertext> PIRServer::expand_query(const Ciphertext &encrypted, uint32_t m,
                                            uint32_t client_id, const PIRClient& client) {
 
