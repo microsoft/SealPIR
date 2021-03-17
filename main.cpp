@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
-    PirReply reply = server.generate_reply(query, 0, client);
+    PirReply reply = server.generate_reply(query, 0);
     auto time_server_e = high_resolution_clock::now();
     auto time_server_us = duration_cast<microseconds>(time_server_e - time_server_s).count();
 

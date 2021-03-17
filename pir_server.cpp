@@ -132,7 +132,7 @@ void PIRServer::set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey)
     galoisKeys_[client_id] = galkey;
 }
 
-PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, const PIRClient& client) {
+PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id) {
 
     vector<uint64_t> nvec = pir_params_.nvec;
     uint64_t product = 1;
@@ -169,7 +169,7 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, const PIR
                 total = ((n_i - 1) % N) + 1; 
             }
             cout << "-- expanding one query ctxt into " << total  << " ctxts "<< endl;
-            vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id, client);
+            vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id);
             expanded_query.insert(expanded_query.end(), std::make_move_iterator(expanded_query_part.begin()), 
                     std::make_move_iterator(expanded_query_part.end()));
             expanded_query_part.clear(); 
@@ -178,21 +178,6 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, const PIR
         if (expanded_query.size() != n_i) {
             cout << " size mismatch!!! " << expanded_query.size() << ", " << n_i << endl; 
         }    
-
-        
-        cout << "Checking expanded query " << endl; 
-        Plaintext tempPt; 
-        for (int h = 0 ; h < expanded_query.size(); h++){
-            client.decryptor_->decrypt(expanded_query[h], tempPt); 
-            if(tempPt.is_zero()){
-                continue;
-            }
-            cout << "index: " << h << ", ";
-            cout << "noise budget = " << client.decryptor_->invariant_noise_budget(expanded_query[h]) << ", "; 
-            cout << tempPt.to_string()  << endl; 
-        }
-        cout << endl;
-        
 
         // Transform expanded query to NTT, and ...
         for (uint32_t jj = 0; jj < expanded_query.size(); jj++) {
@@ -267,7 +252,7 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id, const PIR
 }
 
 inline vector<Ciphertext> PIRServer::expand_query(const Ciphertext &encrypted, uint32_t m,
-                                           uint32_t client_id, const PIRClient& client) {
+                                           uint32_t client_id) {
 
 #ifdef DEBUG
     uint64_t plainMod = params_.plain_modulus().value();
