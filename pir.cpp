@@ -197,7 +197,7 @@ vector<uint64_t> compute_indices(uint64_t desiredIndex, vector<uint64_t> Nvec) {
     return result;
 }
 
-uint64_t InvertMod(uint64_t m, const seal::Modulus& mod) {
+uint64_t invert_mod(uint64_t m, const seal::Modulus& mod) {
   if (mod.uint64_count() > 1) {
     cout << "Mod too big to invert";
   }
