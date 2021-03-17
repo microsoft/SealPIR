@@ -16,13 +16,13 @@ int main(int argc, char *argv[]) {
 
     uint64_t number_of_items = 1 << 12;
     uint64_t size_per_item = 288; // in bytes
-    uint32_t N = 2048;
+    uint32_t N = 4096;
 
     // Recommended values: (logt, d) = (12, 2) or (8, 1). 
-    uint32_t logt = 12; 
+    uint32_t logt = 20; 
     uint32_t d = 2;
 
-    EncryptionParameters params(scheme_type::BFV);
+    EncryptionParameters params(scheme_type::bfv);
     PirParams pir_params;
 
     // Generates all parameters
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     random_device rd;
     for (uint64_t i = 0; i < number_of_items; i++) {
         for (uint64_t j = 0; j < size_per_item; j++) {
-            auto val = rd() % 256;
+            uint8_t val = rd() % 256;
             db.get()[(i * size_per_item) + j] = val;
             db_copy.get()[(i * size_per_item) + j] = val;
         }
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
-    PirReply reply = server.generate_reply(query, 0);
+    PirReply reply = server.generate_reply(query, 0, client);
     auto time_server_e = high_resolution_clock::now();
     auto time_server_us = duration_cast<microseconds>(time_server_e - time_server_s).count();
 
@@ -97,18 +97,41 @@ int main(int argc, char *argv[]) {
     auto time_decode_e = chrono::high_resolution_clock::now();
     auto time_decode_us = duration_cast<microseconds>(time_decode_e - time_decode_s).count();
 
+    Ciphertext one_ct = client.get_encrypted_one();
+    Ciphertext reply2 = server.generate_public_reply(one_ct, index);
+    Plaintext result2 = client.decrypt(reply2);
+
+    logt = floor(log2(params.plain_modulus().value()));
+
     // Convert from FV plaintext (polynomial) to database element at the client
     vector<uint8_t> elems(N * logt / 8);
     coeffs_to_bytes(logt, result, elems.data(), (N * logt) / 8);
 
+    vector<uint8_t> elems2(N * logt / 8);
+    coeffs_to_bytes(logt, result2, elems2.data(), (N * logt) / 8);
+
+    // Check that we retrieved the correct element
+    for (uint32_t i = 0; i < size_per_item; i++) {
+        if (elems[(offset * size_per_item) + i] != elems2[(offset * size_per_item) + i]) {
+            cout << "Main: elems " << (int)elems[(offset * size_per_item) + i] << ", elems2 "
+                 << (int)elems[(offset * size_per_item) + i] << endl;
+            cout << "Main: PIR results inconsistent at" << i << endl;
+            return -1;
+        }
+    }
+
+    bool failed = false;
     // Check that we retrieved the correct element
     for (uint32_t i = 0; i < size_per_item; i++) {
         if (elems[(offset * size_per_item) + i] != db_copy.get()[(ele_index * size_per_item) + i]) {
             cout << "Main: elems " << (int)elems[(offset * size_per_item) + i] << ", db "
                  << (int) db_copy.get()[(ele_index * size_per_item) + i] << endl;
-            cout << "Main: PIR result wrong!" << endl;
-            return -1;
+            cout << "Main: PIR result wrong at " << i <<  endl;
+            failed = true;
         }
+    }
+    if(failed){
+        return -1;
     }
 
     // Output results

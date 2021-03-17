@@ -4,31 +4,26 @@ using namespace std;
 using namespace seal;
 using namespace seal::util;
 
-vector<uint64_t> get_dimensions(uint64_t plaintext_num, uint32_t d) {
+std::vector<std::uint64_t> get_dimensions(std::uint64_t num_of_plaintexts, std::uint32_t d) {
 
     assert(d > 0);
-    assert(plaintext_num > 0);
+    assert(num_of_plaintexts > 0);
 
-    vector<uint64_t> dimensions(d);
+    std::uint64_t root = max(static_cast<uint32_t>(2),static_cast<uint32_t>(floor(pow(num_of_plaintexts, 1.0/d))));
 
-    for (uint32_t i = 0; i < d; i++) {
-        dimensions[i] = std::max((uint32_t) 2, (uint32_t) floor(pow(plaintext_num, 1.0/d)));
+    std::vector<std::uint64_t> dimensions(d, root);
+
+    for(int i = 0; i < d; i++){
+        if(accumulate(dimensions.begin(), dimensions.end(), 1, multiplies<uint64_t>()) > num_of_plaintexts){
+            break;
+        } 
+        dimensions[i] += 1;
     }
 
-    uint32_t product = 1;
-    uint32_t j = 0;
-
-    // if plaintext_num is not a d-power
-    if ((double) dimensions[0] != pow(plaintext_num, 1.0 / d)) {
-        while  (product < plaintext_num && j < d) {
-            product = 1;
-            dimensions[j++]++;
-            for (uint32_t i = 0; i < d; i++) {
-                product *= dimensions[i];
-            }
-        }
-    }
-
+    std::uint32_t prod = accumulate(dimensions.begin(), dimensions.end(), 1, multiplies<uint64_t>());
+    cout << "Total:" << num_of_plaintexts << endl << "Prod: "
+     << prod << endl;
+    assert(prod > num_of_plaintexts);
     return dimensions;
 }
 
@@ -40,25 +35,22 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
 
     // plain modulus = a power of 2 plus 1
     uint64_t plain_mod = (static_cast<uint64_t>(1) << logt) + 1;
-    uint64_t plaintext_num = plaintexts_per_db(logt, N, ele_num, ele_size);
 
 #ifdef DEBUG
     cout << "log(plain mod) before expand = " << logt << endl;
     cout << "number of FV plaintexts = " << plaintext_num << endl;
 #endif
 
-    vector<SmallModulus> coeff_mod_array;
-    uint32_t logq = 0;
-
-    for (uint32_t i = 0; i < 1; i++) {
-        coeff_mod_array.emplace_back(SmallModulus());
-        coeff_mod_array[i] = DefaultParams::small_mods_60bit(i);
-        logq += coeff_mod_array[i].bit_count();
-    }
-
     params.set_poly_modulus_degree(N);
-    params.set_coeff_modulus(coeff_mod_array);
-    params.set_plain_modulus(plain_mod);
+    params.set_coeff_modulus(CoeffModulus::BFVDefault(N));
+    params.set_plain_modulus(PlainModulus::Batching(N, logt));
+
+    logt = floor(log2(params.plain_modulus().value()));
+
+    cout << "logt: " << logt << endl << "N: " << N << endl <<
+    "ele_num: " << ele_num << endl << "ele_size: " << ele_size << endl;
+
+    uint64_t plaintext_num = plaintexts_per_db(logt, N, ele_num, ele_size);
 
     vector<uint64_t> nvec = get_dimensions(plaintext_num, d);
 
@@ -179,7 +171,7 @@ void coeffs_to_bytes(uint32_t limit, const Plaintext &coeffs, uint8_t *output, u
 void vector_to_plaintext(const vector<uint64_t> &coeffs, Plaintext &plain) {
     uint32_t coeff_count = coeffs.size();
     plain.resize(coeff_count);
-    util::set_uint_uint(coeffs.data(), coeff_count, plain.data());
+    util::set_uint(coeffs.data(), coeff_count, plain.data());
 }
 
 vector<uint64_t> compute_indices(uint64_t desiredIndex, vector<uint64_t> Nvec) {
@@ -205,68 +197,13 @@ vector<uint64_t> compute_indices(uint64_t desiredIndex, vector<uint64_t> Nvec) {
     return result;
 }
 
-inline Ciphertext deserialize_ciphertext(string s) {
-    Ciphertext c;
-    std::istringstream input(s);
-    c.unsafe_load(input);
-    return c;
-}
-
-
-vector<Ciphertext> deserialize_ciphertexts(uint32_t count, string s, uint32_t len_ciphertext) {
-    vector<Ciphertext> c;
-    for (uint32_t i = 0; i < count; i++) {
-        c.push_back(deserialize_ciphertext(s.substr(i * len_ciphertext, len_ciphertext)));
-    }
-    return c;
-}
-
-PirQuery deserialize_query(uint32_t d, uint32_t count, string s, uint32_t len_ciphertext) {
-    vector<vector<Ciphertext>> c;
-    for (uint32_t i = 0; i < d; i++) {
-        c.push_back(deserialize_ciphertexts(
-              count, 
-              s.substr(i * count * len_ciphertext, count * len_ciphertext),
-              len_ciphertext)
-        );
-    }
-    return c;
-}
-
-
-inline string serialize_ciphertext(Ciphertext c) {
-    std::ostringstream output;
-    c.save(output);
-    return output.str();
-}
-
-string serialize_ciphertexts(vector<Ciphertext> c) {
-    string s;
-    for (uint32_t i = 0; i < c.size(); i++) {
-        s.append(serialize_ciphertext(c[i]));
-    }
-    return s;
-}
-
-string serialize_query(vector<vector<Ciphertext>> c) {
-    string s;
-    for (uint32_t i = 0; i < c.size(); i++) {
-      for (uint32_t j = 0; j < c[i].size(); j++) {
-        s.append(serialize_ciphertext(c[i][j]));
-      }
-    }
-    return s;
-}
-
-string serialize_galoiskeys(GaloisKeys g) {
-    std::ostringstream output;
-    g.save(output);
-    return output.str();
-}
-
-GaloisKeys *deserialize_galoiskeys(string s) {
-    GaloisKeys *g = new GaloisKeys();
-    std::istringstream input(s);
-    g->unsafe_load(input);
-    return g;
+uint64_t InvertMod(uint64_t m, const seal::Modulus& mod) {
+  if (mod.uint64_count() > 1) {
+    cout << "Mod too big to invert";
+  }
+  uint64_t inverse = 0;
+  if (!seal::util::try_invert_uint_mod(m, mod.value(), inverse)) {
+    cout << "Could not invert value";
+  }
+  return inverse;
 }

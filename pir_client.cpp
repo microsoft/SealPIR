@@ -8,25 +8,26 @@ PIRClient::PIRClient(const EncryptionParameters &params,
                      const PirParams &pir_parms) :
     params_(params){
 
-    newcontext_ = SEALContext::Create(params_);
+    newcontext_ = make_shared<SEALContext>(params, true);
 
     pir_params_ = pir_parms;
 
-    keygen_ = make_unique<KeyGenerator>(newcontext_);
-    encryptor_ = make_unique<Encryptor>(newcontext_, keygen_->public_key());
+    keygen_ = make_unique<KeyGenerator>(*newcontext_);
+    
+    PublicKey public_key;
+    keygen_->create_public_key(public_key);
+    encryptor_ = make_unique<Encryptor>(*newcontext_, public_key);
 
     SecretKey secret_key = keygen_->secret_key();
+    decryptor_ = make_unique<Decryptor>(*newcontext_, secret_key);
 
-    decryptor_ = make_unique<Decryptor>(newcontext_, secret_key);
-    evaluator_ = make_unique<Evaluator>(newcontext_);
+    evaluator_ = make_unique<Evaluator>(*newcontext_);
 }
 
 
 PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
 
     indices_ = compute_indices(desiredIndex, pir_params_.nvec);
-
-    compute_inverse_scales(); 
 
     vector<vector<Ciphertext> > result(pir_params_.d);
     int N = params_.poly_modulus_degree(); 
@@ -37,6 +38,7 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
         // initialize result. 
         cout << "Client: index " << i + 1  <<  "/ " <<  indices_.size() << " = " << indices_[i] << endl; 
         cout << "Client: number of ctxts needed for query = " << num_ptxts << endl;
+        
         for (uint32_t j =0; j < num_ptxts; j++){
             pt.set_zero();
             if (indices_[i] > N*(j+1) || indices_[i] < N*j){
@@ -49,11 +51,18 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
                 cout << "Client: encrypting a real thing " << endl; 
 #endif 
                 uint64_t real_index = indices_[i] - N*j; 
-                pt[real_index] = 1;
+                uint64_t n_i = pir_params_.nvec[i];
+                uint64_t total = N; 
+                if (j == num_ptxts - 1){
+                    total = n_i % N; 
+                }
+                uint64_t log_total = ceil(log2(total));
+
+                cout << "Client: Inverting " << pow(2, log_total) << endl;
+                pt[real_index] = InvertMod(pow(2, log_total), params_.plain_modulus());
             }
             Ciphertext dest;
             encryptor_->encrypt(pt, dest);
-            dest.parms_id() = params_.parms_id();
             result[i].push_back(dest);
         }   
     }
@@ -96,11 +105,7 @@ Plaintext PIRClient::decode_reply(PirReply reply) {
 #ifdef DEBUG
             cout << "Client: reply noise budget = " << decryptor_->invariant_noise_budget(temp[j]) << endl; 
 #endif
-            // multiply by inverse_scale for every coefficient of ptxt
-            for(int h = 0; h < ptxt.coeff_count(); h++){
-                ptxt[h] *= inverse_scales_[recursion_level -  1 - i]; 
-                ptxt[h] %= t; 
-            }
+            
             //cout << "decoded (and scaled) plaintext = " << ptxt.to_string() << endl;
             tempplain.push_back(ptxt);
 
@@ -136,19 +141,20 @@ Plaintext PIRClient::decode_reply(PirReply reply) {
 
 GaloisKeys PIRClient::generate_galois_keys() {
     // Generate the Galois keys needed for coeff_select.
-    vector<uint64_t> galois_elts;
+    vector<uint32_t> galois_elts;
     int N = params_.poly_modulus_degree();
     int logN = get_power_of_two(N);
 
     //cout << "printing galois elements...";
     for (int i = 0; i < logN; i++) {
-        galois_elts.push_back((N + exponentiate_uint64(2, i)) / exponentiate_uint64(2, i));
+        galois_elts.push_back((N + exponentiate_uint(2, i)) / exponentiate_uint(2, i));
 //#ifdef DEBUG
         // cout << galois_elts.back() << ", ";
 //#endif
     }
-
-    return keygen_->galois_keys(pir_params_.dbc, galois_elts);
+    GaloisKeys gal_keys;
+    keygen_->create_galois_keys(galois_elts, gal_keys);
+    return gal_keys;
 }
 
 Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
@@ -158,7 +164,7 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
     uint64_t plainMod = params_.plain_modulus().value();
     int logt = floor(log2(plainMod)); 
 
-    Ciphertext result(newcontext_);
+    Ciphertext result(*newcontext_);
     result.resize(encrypted_count);
 
     // A triple for loop. Going over polys, moduli, and decomposed index.
@@ -202,47 +208,19 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
         }
     }
 
-    result.parms_id() = params_.parms_id();
     return result;
 }
 
-
-void PIRClient::compute_inverse_scales(){
-    if (indices_.size() != pir_params_.nvec.size()){
-        throw invalid_argument("size mismatch"); 
-    }
-    int logt = floor(log2(params_.plain_modulus().value())); 
-
-    uint64_t N = params_.poly_modulus_degree(); 
-    uint64_t t = params_.plain_modulus().value();
-    int logN = log2(N);
-    int logm = logN;
-
-    inverse_scales_.clear(); 
-
-    for(int i = 0; i < pir_params_.nvec.size(); i++){
-        uint64_t index_modN = indices_[i] % N; 
-        uint64_t numCtxt = ceil ( (pir_params_.nvec[i] + 0.0) / N);  // number of query ciphertexts. 
-        uint64_t batchId = indices_[i] / N;  
-        if (batchId == numCtxt - 1) {
-            cout << "Client: adjusting the logm value..." << endl; 
-            logm = ceil(log2((pir_params_.nvec[i] % N)));
-        }
-
-        uint64_t inverse_scale; 
- 
-
-        int quo = logm / logt; 
-        int mod = logm % logt; 
-        inverse_scale = pow(2, logt - mod); 
-        if ((quo +1) %2 != 0){
-            inverse_scale =  params_.plain_modulus().value() - pow(2, logt - mod); 
-        }
-        inverse_scales_.push_back(inverse_scale); 
-        if ( (inverse_scale << logm)  % t != 1){
-            throw logic_error("something wrong"); 
-        }
-        cout << "Client: logm, inverse scale, t = " << logm << ", " << inverse_scale << ", " << t << endl; 
-    }
+Ciphertext PIRClient::get_encrypted_one(){
+    Ciphertext one_ct;
+    Plaintext one("1");
+    encryptor_->encrypt(one, one_ct);
+    return one_ct;
 }
 
+
+Plaintext PIRClient::decrypt(seal::Ciphertext ct){
+    Plaintext result;
+    decryptor_->decrypt(ct, result);
+    return result;
+}
