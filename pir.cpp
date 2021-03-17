@@ -207,3 +207,71 @@ uint64_t InvertMod(uint64_t m, const seal::Modulus& mod) {
   }
   return inverse;
 }
+
+inline Ciphertext deserialize_ciphertext(string s, shared_ptr<SEALContext> context) {
+    Ciphertext c;
+    std::istringstream input(s);
+    c.unsafe_load(*context, input);
+    return c;
+}
+
+
+vector<Ciphertext> deserialize_ciphertexts(uint32_t count, string s, uint32_t len_ciphertext, 
+shared_ptr<SEALContext> context) {
+    vector<Ciphertext> c;
+    for (uint32_t i = 0; i < count; i++) {
+        c.push_back(deserialize_ciphertext(s.substr(i * len_ciphertext, len_ciphertext), context));
+    }
+    return c;
+}
+
+PirQuery deserialize_query(uint32_t d, uint32_t count, string s, uint32_t len_ciphertext,
+shared_ptr<SEALContext> context) {
+    vector<vector<Ciphertext>> c;
+    for (uint32_t i = 0; i < d; i++) {
+        c.push_back(deserialize_ciphertexts(
+              count, 
+              s.substr(i * count * len_ciphertext, count * len_ciphertext),
+              len_ciphertext, context)
+        );
+    }
+    return c;
+}
+
+
+inline string serialize_ciphertext(Ciphertext c) {
+    std::ostringstream output;
+    c.save(output);
+    return output.str();
+}
+
+string serialize_ciphertexts(vector<Ciphertext> c) {
+    string s;
+    for (uint32_t i = 0; i < c.size(); i++) {
+        s.append(serialize_ciphertext(c[i]));
+    }
+    return s;
+}
+
+string serialize_query(vector<vector<Ciphertext>> c) {
+    string s;
+    for (uint32_t i = 0; i < c.size(); i++) {
+      for (uint32_t j = 0; j < c[i].size(); j++) {
+        s.append(serialize_ciphertext(c[i][j]));
+      }
+    }
+    return s;
+}
+
+string serialize_galoiskeys(GaloisKeys g) {
+    std::ostringstream output;
+    g.save(output);
+    return output.str();
+}
+
+GaloisKeys *deserialize_galoiskeys(string s, shared_ptr<SEALContext> context) {
+    GaloisKeys *g = new GaloisKeys();
+    std::istringstream input(s);
+    g->unsafe_load(*context, input);
+    return g;
+}
