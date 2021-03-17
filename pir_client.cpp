@@ -59,7 +59,7 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
                 uint64_t log_total = ceil(log2(total));
 
                 cout << "Client: Inverting " << pow(2, log_total) << endl;
-                pt[real_index] = InvertMod(pow(2, log_total), params_.plain_modulus());
+                pt[real_index] = invert_mod(pow(2, log_total), params_.plain_modulus());
             }
             Ciphertext dest;
             encryptor_->encrypt(pt, dest);

@@ -62,7 +62,7 @@ void vector_to_plaintext(const std::vector<std::uint64_t> &coeffs, seal::Plainte
 std::vector<std::uint64_t> compute_indices(std::uint64_t desiredIndex,
                                            std::vector<std::uint64_t> nvec);
 
-uint64_t InvertMod(uint64_t m, const seal::Modulus& mod);
+uint64_t invert_mod(uint64_t m, const seal::Modulus& mod);
 
 // Serialize and deserialize ciphertexts to send them over the network
 PirQuery deserialize_query(std::uint32_t d, uint32_t count, std::string s, std::uint32_t len_ciphertext,
