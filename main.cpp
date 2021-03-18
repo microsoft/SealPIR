@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
     auto time_pre_e = high_resolution_clock::now();
     auto time_pre_us = duration_cast<microseconds>(time_pre_e - time_pre_s).count();
 
+
     // Choose an index of an element in the DB
     uint64_t ele_index = rd() % number_of_items; // element in DB at random position
     uint64_t index = client.get_fv_index(ele_index, size_per_item);   // index of FV plaintext
@@ -121,7 +122,7 @@ int main(int argc, char *argv[]) {
     for (uint32_t i = 0; i < size_per_item; i++) {
         if (elems[(offset * size_per_item) + i] != db_copy.get()[(ele_index * size_per_item) + i]) {
             cout << "Main: elems " << (int)elems[(offset * size_per_item) + i] << ", db "
-                 << (int) db_copy.get()[(ele_index * size_per_item) + i] << endl;
+                << (int) db_copy.get()[(ele_index * size_per_item) + i] << endl;
             cout << "Main: PIR result wrong at " << i <<  endl;
             failed = true;
         }
@@ -134,8 +135,7 @@ int main(int argc, char *argv[]) {
     cout << "Main: PIR result correct!" << endl;
     cout << "Main: PIRServer pre-processing time: " << time_pre_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient query generation time: " << time_query_us / 1000 << " ms" << endl;
-    cout << "Main: PIRServer reply generation time: " << time_server_us / 1000 << " ms"
-         << endl;
+    cout << "Main: PIRServer reply generation time: " << time_server_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient answer decode time: " << time_decode_us / 1000 << " ms" << endl;
     cout << "Main: Reply num ciphertexts: " << reply.size() << endl;
 

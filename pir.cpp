@@ -93,7 +93,6 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
     pir_params.d = d;                 
     pir_params.expansion_ratio = expansion_ratio;           
     pir_params.nvec = nvec;
-    pir_params.dbc = 6;
     pir_params.n = num_of_plaintexts;
 }
 
@@ -106,7 +105,6 @@ void print_pir_params(const PirParams &pir_params){
     cout << "num_of_plaintexts: " << pir_params.num_of_plaintexts << endl;
     cout << "dimension: " << pir_params.d << endl;
     cout << "expansion ratio: " << pir_params.expansion_ratio << endl;
-    cout << "dbc: " << pir_params.dbc << endl;
     cout << "n: " << pir_params.n << endl;
 }
 
@@ -136,7 +134,6 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
     }
 
     pir_params.d = d;
-    pir_params.dbc = 6;
     pir_params.n = plaintext_num;
     pir_params.nvec = nvec;
     pir_params.expansion_ratio = expansion_ratio << 1; // because one ciphertext = two polys

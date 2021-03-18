@@ -21,7 +21,6 @@ struct PirParams {
     std::uint32_t d;                 // number of dimensions for the database
     std::uint32_t expansion_ratio;           // ratio of ciphertext to plaintext
     std::vector<std::uint64_t> nvec;         // size of each of the d dimensions
-    std::uint32_t dbc;
     std::uint32_t n;
 };
 
