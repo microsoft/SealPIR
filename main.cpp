@@ -22,12 +22,25 @@ int main(int argc, char *argv[]) {
     uint32_t logt = 20; 
     uint32_t d = 2;
 
-    EncryptionParameters params(scheme_type::bfv);
+    EncryptionParameters enc_params(scheme_type::bfv);
     PirParams pir_params;
 
     // Generates all parameters
-    cout << "Main: Generating all parameters" << endl;
-    gen_params(number_of_items, size_per_item, N, logt, d, params, pir_params);
+    
+    cout << "Main: Generating SEAL parameters" << endl;
+    gen_encryption_params(N, logt, enc_params);
+    
+    cout << "Main: Verifying SEAL parameters" << endl;
+    verify_encryption_params(enc_params);
+    cout << "Main: SEAL parameters are good" << endl;
+
+    cout << "Main: Generating PIR parameters" << endl;
+    gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params);
+    
+    
+    
+    //gen_params(number_of_items, size_per_item, N, logt, d, enc_params, pir_params);
+    print_pir_params(pir_params);
 
     cout << "Main: Initializing the database (this may take some time) ..." << endl;
 
@@ -49,10 +62,10 @@ int main(int argc, char *argv[]) {
 
     // Initialize PIR Server
     cout << "Main: Initializing server and client" << endl;
-    PIRServer server(params, pir_params);
+    PIRServer server(enc_params, pir_params);
 
     // Initialize PIR client....
-    PIRClient client(params, pir_params);
+    PIRClient client(enc_params, pir_params);
     GaloisKeys galois_keys = client.generate_galois_keys();
 
     // Set galois key for client with id 0
@@ -97,7 +110,7 @@ int main(int argc, char *argv[]) {
     auto time_decode_e = chrono::high_resolution_clock::now();
     auto time_decode_us = duration_cast<microseconds>(time_decode_e - time_decode_s).count();
 
-    logt = floor(log2(params.plain_modulus().value()));
+    logt = floor(log2(enc_params.plain_modulus().value()));
 
     // Convert from FV plaintext (polynomial) to database element at the client
     vector<uint8_t> elems(N * logt / 8);

@@ -27,19 +27,93 @@ std::vector<std::uint64_t> get_dimensions(std::uint64_t num_of_plaintexts, std::
     return dimensions;
 }
 
+void gen_encryption_params(std::uint32_t N, std::uint32_t logt,
+                           seal::EncryptionParameters &enc_params){
+    
+    enc_params.set_poly_modulus_degree(N);
+    enc_params.set_coeff_modulus(CoeffModulus::BFVDefault(N));
+    enc_params.set_plain_modulus(PlainModulus::Batching(N, logt));
+}
+
+void verify_encryption_params(const seal::EncryptionParameters &enc_params){
+    SEALContext context(enc_params, true);
+    if(!context.parameters_set()){
+        throw invalid_argument("SEAL parameters not valid.");
+    }
+    if(!context.using_keyswitching()){
+        throw invalid_argument("SEAL parameters do not support key switching.");
+    }
+    if(!context.first_context_data()->qualifiers().using_batching){
+        throw invalid_argument("SEAL parameters do not support batching.");
+    }
+    return;
+}
+
+void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
+                    const EncryptionParameters &enc_params, PirParams &pir_params,
+                    bool enable_symmetric, bool enable_batching){
+    std::uint32_t N = enc_params.poly_modulus_degree();
+    Modulus t = enc_params.plain_modulus();
+    std::uint32_t logt = floor(log2(t.value()));
+
+    cout << "logt: " << logt << endl << "N: " << N << endl <<
+    "ele_num: " << ele_num << endl << "ele_size: " << ele_size << endl;
+
+    std::uint64_t elements_per_plaintext;
+    std::uint64_t num_of_plaintexts;
+
+    if(enable_batching){
+        elements_per_plaintext = elements_per_ptxt(logt, N, ele_size);
+        num_of_plaintexts = plaintexts_per_db(logt, N, ele_num, ele_size);
+    }
+    else{
+        elements_per_plaintext = 1;
+        num_of_plaintexts = ele_num;
+    }
+
+    vector<uint64_t> nvec = get_dimensions(num_of_plaintexts, d);
+
+    uint32_t expansion_ratio = 0;
+    for (uint32_t i = 0; i < enc_params.coeff_modulus().size(); ++i) {
+        double logqi = log2(enc_params.coeff_modulus()[i].value());
+        cout << "PIR: logqi = " << logqi << endl;
+        expansion_ratio += ceil(logqi / logt);
+    }
+
+    if(!enable_symmetric){
+        expansion_ratio = expansion_ratio << 1;
+    }
+
+    pir_params.enable_symmetric = enable_symmetric;
+    pir_params.enable_batching = enable_batching;
+    pir_params.ele_num = ele_num;
+    pir_params.ele_size = ele_size;
+    pir_params.elements_per_plaintext = elements_per_plaintext;
+    pir_params.num_of_plaintexts = num_of_plaintexts;
+    pir_params.d = d;                 
+    pir_params.expansion_ratio = expansion_ratio;           
+    pir_params.nvec = nvec;
+    pir_params.dbc = 6;
+    pir_params.n = num_of_plaintexts;
+}
+
+
+void print_pir_params(const PirParams &pir_params){
+    cout << "Pir Params: " << endl;
+    cout << "num_of_elements: " << pir_params.ele_num << endl;
+    cout << "ele_size: " << pir_params.ele_size << endl;
+    cout << "elements_per_plaintext: " << pir_params.elements_per_plaintext << endl;
+    cout << "num_of_plaintexts: " << pir_params.num_of_plaintexts << endl;
+    cout << "dimension: " << pir_params.d << endl;
+    cout << "expansion ratio: " << pir_params.expansion_ratio << endl;
+    cout << "dbc: " << pir_params.dbc << endl;
+    cout << "n: " << pir_params.n << endl;
+}
+
 void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
                 uint32_t d, EncryptionParameters &params,
                 PirParams &pir_params) {
     
-    // Determine the maximum size of each dimension
-
-    // plain modulus = a power of 2 plus 1
-    uint64_t plain_mod = (static_cast<uint64_t>(1) << logt) + 1;
-
-#ifdef DEBUG
-    cout << "log(plain mod) before expand = " << logt << endl;
-    cout << "number of FV plaintexts = " << plaintext_num << endl;
-#endif
 
     params.set_poly_modulus_degree(N);
     params.set_coeff_modulus(CoeffModulus::BFVDefault(N));
@@ -57,7 +131,7 @@ void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
     uint32_t expansion_ratio = 0;
     for (uint32_t i = 0; i < params.coeff_modulus().size(); ++i) {
         double logqi = log2(params.coeff_modulus()[i].value());
-        cout << "PIR: logqi = " << logqi << endl; 
+        cout << "PIR: logqi = " << logqi << endl;
         expansion_ratio += ceil(logqi / logt);
     }
 

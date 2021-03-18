@@ -52,6 +52,9 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     }
     uint64_t matrix_plaintexts = prod;
 
+    cout << "Total: " << total << endl;
+    cout << "Prod: " << prod << endl;
+
     assert(total <= matrix_plaintexts);
 
     auto result = make_unique<vector<Plaintext>>();

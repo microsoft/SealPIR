@@ -7,27 +7,47 @@
 #include <string>
 #include <vector>
 
-#define CIPHER_SIZE 32841
-
 typedef std::vector<seal::Plaintext> Database;
 typedef std::vector<std::vector<seal::Ciphertext>> PirQuery;
 typedef std::vector<seal::Ciphertext> PirReply;
 
 struct PirParams {
-    std::uint64_t n;                 // number of plaintexts in database
-    std::uint32_t d;                 // number of dimensions for the database (1 or 2)
-    std::uint32_t expansion_ratio;   // ratio of ciphertext to plaintext
-    std::uint32_t dbc;               // decomposition bit count (used by relinearization)
-    std::vector<std::uint64_t> nvec; // size of each of the d dimensions
+    bool enable_symmetric;
+    bool enable_batching;
+    std::uint64_t ele_num;
+    std::uint64_t ele_size;
+    std::uint64_t elements_per_plaintext;
+    std::uint64_t num_of_plaintexts;         // number of plaintexts in database
+    std::uint32_t d;                 // number of dimensions for the database
+    std::uint32_t expansion_ratio;           // ratio of ciphertext to plaintext
+    std::vector<std::uint64_t> nvec;         // size of each of the d dimensions
+    std::uint32_t dbc;
+    std::uint32_t n;
 };
 
-void gen_params(std::uint64_t ele_num,  // number of elements (not FV plaintexts) in database
-                std::uint64_t ele_size, // size of each element
-                std::uint32_t N,        // degree of polynomial
-                std::uint32_t logt,     // bits of plaintext coefficient
-                std::uint32_t d,        // dimension of database
+void gen_encryption_params(std::uint32_t N,        // degree of polynomial
+                           std::uint32_t logt,     // bits of plaintext coefficient
+                           seal::EncryptionParameters &enc_params);
+
+void gen_pir_params(uint64_t ele_num,
+                    uint64_t ele_size,
+                    uint32_t d,
+                    const seal::EncryptionParameters &enc_params,
+                    PirParams &pir_params,
+                    bool enable_symmetric = false,
+                    bool enable_batching = true);
+
+void gen_params(uint64_t ele_num,
+                uint64_t ele_size,
+                uint32_t N,
+                uint32_t logt,
+                uint32_t d,
                 seal::EncryptionParameters &params,
                 PirParams &pir_params);
+
+void verify_encryption_params(const seal::EncryptionParameters &enc_params);
+
+void print_pir_params(const PirParams &pir_params);
 
 // returns the plaintext modulus after expansion
 std::uint32_t plainmod_after_expansion(std::uint32_t logt, std::uint32_t N, 
