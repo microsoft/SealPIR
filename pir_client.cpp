@@ -40,15 +40,7 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
         
         for (uint32_t j =0; j < num_ptxts; j++){
             pt.set_zero();
-            if (indices_[i] > N*(j+1) || indices_[i] < N*j){
-#ifdef DEBUG
-                cout << "Client: coming here: so just encrypt zero." << endl; 
-#endif 
-                // just encrypt zero
-            } else{
-#ifdef DEBUG
-                cout << "Client: encrypting a real thing " << endl; 
-#endif 
+            if (indices_[i] > N*j && indices_[i] < N*(j+1)){
                 uint64_t real_index = indices_[i] - N*j; 
                 uint64_t n_i = pir_params_.nvec[i];
                 uint64_t total = N; 
