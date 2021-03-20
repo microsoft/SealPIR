@@ -15,11 +15,16 @@ PIRClient::PIRClient(const EncryptionParameters &enc_params,
     
     PublicKey public_key;
     keygen_->create_public_key(public_key);
-    encryptor_ = make_unique<Encryptor>(*context_, public_key);
-
     SecretKey secret_key = keygen_->secret_key();
-    decryptor_ = make_unique<Decryptor>(*context_, secret_key);
 
+    if(pir_params_.enable_symmetric){
+        encryptor_ = make_unique<Encryptor>(*context_, secret_key);
+    }
+    else{
+        encryptor_ = make_unique<Encryptor>(*context_, public_key);
+    }
+    
+    decryptor_ = make_unique<Decryptor>(*context_, secret_key);
     evaluator_ = make_unique<Evaluator>(*context_);
 }
 
@@ -53,7 +58,12 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
                 pt[real_index] = invert_mod(pow(2, log_total), enc_params_.plain_modulus());
             }
             Ciphertext dest;
-            encryptor_->encrypt(pt, dest);
+            if(pir_params_.enable_symmetric){
+                encryptor_->encrypt_symmetric(pt, dest);
+            }
+            else{
+                encryptor_->encrypt(pt, dest);
+            }
             result[i].push_back(dest);
         }   
     }

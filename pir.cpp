@@ -80,10 +80,6 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
         expansion_ratio += ceil(logqi / logt);
     }
 
-    if(!enable_symmetric){
-        expansion_ratio = expansion_ratio << 1;
-    }
-
     pir_params.enable_symmetric = enable_symmetric;
     pir_params.enable_batching = enable_batching;
     pir_params.ele_num = ele_num;
@@ -91,7 +87,7 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
     pir_params.elements_per_plaintext = elements_per_plaintext;
     pir_params.num_of_plaintexts = num_of_plaintexts;
     pir_params.d = d;                 
-    pir_params.expansion_ratio = expansion_ratio;           
+    pir_params.expansion_ratio = expansion_ratio << 1;           
     pir_params.nvec = nvec;
     pir_params.n = num_of_plaintexts;
 }
@@ -107,38 +103,6 @@ void print_pir_params(const PirParams &pir_params){
     cout << "expansion ratio: " << pir_params.expansion_ratio << endl;
     cout << "n: " << pir_params.n << endl;
 }
-
-void gen_params(uint64_t ele_num, uint64_t ele_size, uint32_t N, uint32_t logt,
-                uint32_t d, EncryptionParameters &params,
-                PirParams &pir_params) {
-    
-
-    params.set_poly_modulus_degree(N);
-    params.set_coeff_modulus(CoeffModulus::BFVDefault(N));
-    params.set_plain_modulus(PlainModulus::Batching(N, logt));
-
-    logt = floor(log2(params.plain_modulus().value()));
-
-    cout << "logt: " << logt << endl << "N: " << N << endl <<
-    "ele_num: " << ele_num << endl << "ele_size: " << ele_size << endl;
-
-    uint64_t plaintext_num = plaintexts_per_db(logt, N, ele_num, ele_size);
-
-    vector<uint64_t> nvec = get_dimensions(plaintext_num, d);
-
-    uint32_t expansion_ratio = 0;
-    for (uint32_t i = 0; i < params.coeff_modulus().size(); ++i) {
-        double logqi = log2(params.coeff_modulus()[i].value());
-        cout << "PIR: logqi = " << logqi << endl;
-        expansion_ratio += ceil(logqi / logt);
-    }
-
-    pir_params.d = d;
-    pir_params.n = plaintext_num;
-    pir_params.nvec = nvec;
-    pir_params.expansion_ratio = expansion_ratio << 1; // because one ciphertext = two polys
-}
-
 
 uint32_t plainmod_after_expansion(uint32_t logt, uint32_t N, uint32_t d, 
         uint64_t ele_num, uint64_t ele_size) {
