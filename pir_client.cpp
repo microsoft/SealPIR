@@ -61,20 +61,12 @@ PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
     return result;
 }
 
-uint64_t PIRClient::get_fv_index(uint64_t element_idx, uint64_t ele_size) {
-    auto N = enc_params_.poly_modulus_degree();
-    auto logt = floor(log2(enc_params_.plain_modulus().value()));
-
-    auto ele_per_ptxt = elements_per_ptxt(logt, N, ele_size);
-    return static_cast<uint64_t>(element_idx / ele_per_ptxt);
+uint64_t PIRClient::get_fv_index(uint64_t element_index) {
+    return static_cast<uint64_t>(element_index / pir_params_.elements_per_plaintext);
 }
 
-uint64_t PIRClient::get_fv_offset(uint64_t element_idx, uint64_t ele_size) {
-    uint32_t N = enc_params_.poly_modulus_degree();
-    uint32_t logt = floor(log2(enc_params_.plain_modulus().value()));
-
-    uint64_t ele_per_ptxt = elements_per_ptxt(logt, N, ele_size);
-    return element_idx % ele_per_ptxt;
+uint64_t PIRClient::get_fv_offset(uint64_t element_index) {
+    return element_index % pir_params_.elements_per_plaintext;
 }
 
 Plaintext PIRClient::decode_reply(PirReply reply) {

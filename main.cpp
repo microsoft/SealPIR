@@ -83,8 +83,8 @@ int main(int argc, char *argv[]) {
 
     // Choose an index of an element in the DB
     uint64_t ele_index = rd() % number_of_items; // element in DB at random position
-    uint64_t index = client.get_fv_index(ele_index, size_per_item);   // index of FV plaintext
-    uint64_t offset = client.get_fv_offset(ele_index, size_per_item); // offset in FV plaintext
+    uint64_t index = client.get_fv_index(ele_index);   // index of FV plaintext
+    uint64_t offset = client.get_fv_offset(ele_index); // offset in FV plaintext
     cout << "Main: element index = " << ele_index << " from [0, " << number_of_items -1 << "]" << endl;
     cout << "Main: FV index = " << index << ", FV offset = " << offset << endl; 
 

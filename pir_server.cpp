@@ -43,7 +43,7 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     uint32_t N = enc_params_.poly_modulus_degree();
 
     // number of FV plaintexts needed to represent all elements
-    uint64_t total = plaintexts_per_db(logt, N, ele_num, ele_size);
+    uint64_t num_of_plaintexts = pir_params_.num_of_plaintexts;
 
     // number of FV plaintexts needed to create the d-dimensional matrix
     uint64_t prod = 1;
@@ -52,15 +52,15 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     }
     uint64_t matrix_plaintexts = prod;
 
-    cout << "Total: " << total << endl;
+    cout << "Total: " << num_of_plaintexts << endl;
     cout << "Prod: " << prod << endl;
 
-    assert(total <= matrix_plaintexts);
+    assert(num_of_plaintexts <= matrix_plaintexts);
 
     auto result = make_unique<vector<Plaintext>>();
     result->reserve(matrix_plaintexts);
 
-    uint64_t ele_per_ptxt = elements_per_ptxt(logt, N, ele_size);
+    uint64_t ele_per_ptxt = pir_params_.elements_per_plaintext;
     uint64_t bytes_per_ptxt = ele_per_ptxt * ele_size;
 
     uint64_t db_size = ele_num * ele_size;
@@ -68,12 +68,12 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     uint64_t coeff_per_ptxt = ele_per_ptxt * coefficients_per_element(logt, ele_size);
     assert(coeff_per_ptxt <= N);
 
-    cout << "Server: total number of FV plaintext = " << total << endl;
+    cout << "Server: num_of_plaintexts number of FV plaintext = " << num_of_plaintexts << endl;
     cout << "Server: elements packed into each plaintext " << ele_per_ptxt << endl; 
 
     uint32_t offset = 0;
 
-    for (uint64_t i = 0; i < total; i++) {
+    for (uint64_t i = 0; i < num_of_plaintexts; i++) {
 
         uint64_t process_bytes = 0;
 
@@ -106,7 +106,7 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
 
     // Add padding to make database a matrix
     uint64_t current_plaintexts = result->size();
-    assert(current_plaintexts <= total);
+    assert(current_plaintexts <= num_of_plaintexts);
 
 #ifdef DEBUG
     cout << "adding: " << matrix_plaintexts - current_plaintexts

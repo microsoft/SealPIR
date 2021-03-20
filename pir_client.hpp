@@ -17,8 +17,8 @@ class PIRClient {
     seal::GaloisKeys generate_galois_keys();
 
     // Index and offset of an element in an FV plaintext
-    uint64_t get_fv_index(uint64_t element_idx, uint64_t ele_size);
-    uint64_t get_fv_offset(uint64_t element_idx, uint64_t ele_size);
+    uint64_t get_fv_index(uint64_t element_index);
+    uint64_t get_fv_offset(uint64_t element_index);
 
 
   private:
