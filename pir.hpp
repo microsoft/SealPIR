@@ -22,6 +22,7 @@ struct PirParams {
     std::uint32_t expansion_ratio;           // ratio of ciphertext to plaintext
     std::vector<std::uint64_t> nvec;         // size of each of the d dimensions
     std::uint32_t n;
+    std::uint32_t slot_count;
 };
 
 void gen_encryption_params(std::uint32_t N,        // degree of polynomial
@@ -69,7 +70,7 @@ std::vector<std::uint64_t> bytes_to_coeffs(std::uint32_t limit, const std::uint8
                                            std::uint64_t size);
 
 // Converts an array of coefficients into an array of bytes
-void coeffs_to_bytes(std::uint32_t logtp, const seal::Plaintext &coeffs, std::uint8_t *output,
+void coeffs_to_bytes(std::uint32_t logtp, const std::vector<std::uint64_t> &coeffs, std::uint8_t *output,
                      std::uint32_t size_out);
 
 // Takes a vector of coefficients and returns the corresponding FV plaintext

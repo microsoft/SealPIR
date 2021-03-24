@@ -26,6 +26,7 @@ PIRClient::PIRClient(const EncryptionParameters &enc_params,
     
     decryptor_ = make_unique<Decryptor>(*context_, secret_key);
     evaluator_ = make_unique<Evaluator>(*context_);
+    encoder_ = make_unique<BatchEncoder>(*context_);
 }
 
 
@@ -77,6 +78,20 @@ uint64_t PIRClient::get_fv_index(uint64_t element_index) {
 
 uint64_t PIRClient::get_fv_offset(uint64_t element_index) {
     return element_index % pir_params_.elements_per_plaintext;
+}
+
+vector<uint8_t> PIRClient::decode_reply(PirReply reply, uint64_t offset){
+    Plaintext result = decode_reply(reply);
+    
+    uint32_t N = enc_params_.poly_modulus_degree(); 
+    uint32_t logt = floor(log2(enc_params_.plain_modulus().value()));
+
+    // Convert from FV plaintext (polynomial) to database element at the client
+    vector<uint8_t> elems(N * logt / 8);
+    vector<uint64_t> coeffs;
+    encoder_->decode(result, coeffs);
+    coeffs_to_bytes(logt, coeffs, elems.data(), (N * logt) / 8);
+    return std::vector<uint8_t>(elems.begin() + offset * pir_params_.ele_size, elems.begin() + (offset + 1) * pir_params_.ele_size);
 }
 
 Plaintext PIRClient::decode_reply(PirReply reply) {

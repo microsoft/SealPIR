@@ -12,6 +12,7 @@ PIRServer::PIRServer(const EncryptionParameters &enc_params, const PirParams &pi
 {
     context_ = make_shared<SEALContext>(enc_params, true);
     evaluator_ = make_unique<Evaluator>(*context_);
+    encoder_ = make_unique<BatchEncoder>(*context_);
 }
 
 void PIRServer::preprocess_database() {
@@ -94,12 +95,12 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
         assert(used <= coeff_per_ptxt);
 
         // Pad the rest with 1s
-        for (uint64_t j = 0; j < (N - used); j++) {
+        for (uint64_t j = 0; j < (pir_params_.slot_count - used); j++) {
             coefficients.push_back(1);
         }
 
         Plaintext plain;
-        vector_to_plaintext(coefficients, plain);
+        encoder_->encode(coefficients, plain);
         // cout << i << "-th encoded plaintext = " << plain.to_string() << endl; 
         result->push_back(move(plain));
     }

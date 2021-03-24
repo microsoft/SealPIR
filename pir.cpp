@@ -46,6 +46,13 @@ void verify_encryption_params(const seal::EncryptionParameters &enc_params){
     if(!context.first_context_data()->qualifiers().using_batching){
         throw invalid_argument("SEAL parameters do not support batching.");
     }
+
+    BatchEncoder batch_encoder(context);
+    size_t slot_count = batch_encoder.slot_count();
+    if(slot_count != enc_params.poly_modulus_degree()){
+        throw invalid_argument("Slot count not equal to poly modulus degree - this will cause issues downstream.");
+    }
+
     return;
 }
 
@@ -90,6 +97,7 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
     pir_params.expansion_ratio = expansion_ratio << 1;           
     pir_params.nvec = nvec;
     pir_params.n = num_of_plaintexts;
+    pir_params.slot_count = N;
 }
 
 
@@ -102,6 +110,7 @@ void print_pir_params(const PirParams &pir_params){
     cout << "dimension: " << pir_params.d << endl;
     cout << "expansion ratio: " << pir_params.expansion_ratio << endl;
     cout << "n: " << pir_params.n << endl;
+    cout << "slot count: " << pir_params.slot_count << endl;
 }
 
 uint32_t plainmod_after_expansion(uint32_t logt, uint32_t N, uint32_t d, 
@@ -177,12 +186,12 @@ vector<uint64_t> bytes_to_coeffs(uint32_t limit, const uint8_t *bytes, uint64_t 
     return output;
 }
 
-void coeffs_to_bytes(uint32_t limit, const Plaintext &coeffs, uint8_t *output, uint32_t size_out) {
+void coeffs_to_bytes(uint32_t limit, const vector<uint64_t> &coeffs, uint8_t *output, uint32_t size_out) {
     uint32_t room = 8;
     uint32_t j = 0;
     uint8_t *target = output;
 
-    for (uint32_t i = 0; i < coeffs.coeff_count(); i++) {
+    for (uint32_t i = 0; i < coeffs.size(); i++) {
         uint64_t src = coeffs[i];
         uint32_t rest = limit;
         while (rest && j < size_out) {

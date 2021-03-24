@@ -107,21 +107,17 @@ int main(int argc, char *argv[]) {
 
     // Measure response extraction
     auto time_decode_s = chrono::high_resolution_clock::now();
-    Plaintext result = client.decode_reply(reply);
+    vector<uint8_t> elems = client.decode_reply(reply, offset);
     auto time_decode_e = chrono::high_resolution_clock::now();
     auto time_decode_us = duration_cast<microseconds>(time_decode_e - time_decode_s).count();
 
-    logt = floor(log2(enc_params.plain_modulus().value()));
-
-    // Convert from FV plaintext (polynomial) to database element at the client
-    vector<uint8_t> elems(N * logt / 8);
-    coeffs_to_bytes(logt, result, elems.data(), (N * logt) / 8);
+    assert(elems.size() == size_per_item);
 
     bool failed = false;
     // Check that we retrieved the correct element
     for (uint32_t i = 0; i < size_per_item; i++) {
-        if (elems[(offset * size_per_item) + i] != db_copy.get()[(ele_index * size_per_item) + i]) {
-            cout << "Main: elems " << (int)elems[(offset * size_per_item) + i] << ", db "
+        if (elems[i] != db_copy.get()[(ele_index * size_per_item) + i]) {
+            cout << "Main: elems " << (int)elems[i] << ", db "
                 << (int) db_copy.get()[(ele_index * size_per_item) + i] << endl;
             cout << "Main: PIR result wrong at " << i <<  endl;
             failed = true;

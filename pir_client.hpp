@@ -13,6 +13,7 @@ class PIRClient {
 
     PirQuery generate_query(std::uint64_t desiredIndex);
     seal::Plaintext decode_reply(PirReply reply);
+    std::vector<uint8_t> decode_reply(PirReply reply, uint64_t offset);
 
     seal::GaloisKeys generate_galois_keys();
 
@@ -29,6 +30,7 @@ class PIRClient {
     std::unique_ptr<seal::Decryptor> decryptor_;
     std::unique_ptr<seal::Evaluator> evaluator_;
     std::unique_ptr<seal::KeyGenerator> keygen_;
+    std::unique_ptr<seal::BatchEncoder> encoder_;
     std::shared_ptr<seal::SEALContext> context_;
 
     vector<uint64_t> indices_; // the indices for retrieval. 
