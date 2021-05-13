@@ -80,6 +80,12 @@ uint64_t PIRClient::get_fv_offset(uint64_t element_index) {
     return element_index % pir_params_.elements_per_plaintext;
 }
 
+Plaintext PIRClient::decrypt(Ciphertext ct){
+    Plaintext pt;
+    decryptor_->decrypt(ct, pt);
+    return pt;
+}
+
 vector<uint8_t> PIRClient::decode_reply(PirReply reply, uint64_t offset){
     Plaintext result = decode_reply(reply);
     
