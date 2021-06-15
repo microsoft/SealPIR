@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
     uint32_t logt = 20; 
     uint32_t d = 2;
     bool use_symmetric = true; // use symmetric encryption instead of public key (recommended)
+    bool use_batching = true; // pack as many elements as possible into a BFV plaintext (recommended)
 
     EncryptionParameters enc_params(scheme_type::bfv);
     PirParams pir_params;
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
     cout << "Main: SEAL parameters are good" << endl;
 
     cout << "Main: Generating PIR parameters" << endl;
-    gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params, true, true);
+    gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params, use_symmetric, use_batching);
     
     
     print_seal_params(enc_params); 
