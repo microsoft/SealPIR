@@ -92,8 +92,8 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         else{
-            cout << "Should be " << index << ": 1" << endl;
-            cout << i << ": " << decryption.to_string() << endl;
+            cout << "Plaintext of query vector at index " << index << " should have value 1 (check below)" << endl;
+            cout << "Plaintext of query vector at index " << i << " has value " << decryption.to_string() << endl;
         }
     }
 

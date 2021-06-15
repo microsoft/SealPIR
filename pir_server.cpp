@@ -53,9 +53,6 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     }
     uint64_t matrix_plaintexts = prod;
 
-    cout << "Total: " << num_of_plaintexts << endl;
-    cout << "Prod: " << prod << endl;
-
     assert(num_of_plaintexts <= matrix_plaintexts);
 
     auto result = make_unique<vector<Plaintext>>();
@@ -68,9 +65,6 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
 
     uint64_t coeff_per_ptxt = ele_per_ptxt * coefficients_per_element(logt, ele_size);
     assert(coeff_per_ptxt <= N);
-
-    cout << "Server: num_of_plaintexts number of FV plaintext = " << num_of_plaintexts << endl;
-    cout << "Server: elements packed into each plaintext " << ele_per_ptxt << endl; 
 
     uint32_t offset = 0;
 
@@ -152,7 +146,6 @@ PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id) {
 
     int logt = floor(log2(enc_params_.plain_modulus().value()));
 
-    cout << "expansion ratio = " << pir_params_.expansion_ratio << endl; 
     for (uint32_t i = 0; i < nvec.size(); i++) {
         cout << "Server: " << i + 1 << "-th recursion level started " << endl; 
 

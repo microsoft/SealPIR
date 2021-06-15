@@ -21,9 +21,7 @@ std::vector<std::uint64_t> get_dimensions(std::uint64_t num_of_plaintexts, std::
     }
 
     std::uint32_t prod = accumulate(dimensions.begin(), dimensions.end(), 1, multiplies<uint64_t>());
-    cout << "Total:" << num_of_plaintexts << endl << "Prod: "
-     << prod << endl;
-    assert(prod > num_of_plaintexts);
+    assert(prod >= num_of_plaintexts);
     return dimensions;
 }
 
@@ -32,7 +30,7 @@ void gen_encryption_params(std::uint32_t N, std::uint32_t logt,
     
     enc_params.set_poly_modulus_degree(N);
     enc_params.set_coeff_modulus(CoeffModulus::BFVDefault(N));
-    enc_params.set_plain_modulus(PlainModulus::Batching(N, logt));
+    enc_params.set_plain_modulus(PlainModulus::Batching(N, logt+1));
 }
 
 void verify_encryption_params(const seal::EncryptionParameters &enc_params){
@@ -62,10 +60,6 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
     std::uint32_t N = enc_params.poly_modulus_degree();
     Modulus t = enc_params.plain_modulus();
     std::uint32_t logt = floor(log2(t.value()));
-
-    cout << "logt: " << logt << endl << "N: " << N << endl <<
-    "ele_num: " << ele_num << endl << "ele_size: " << ele_size << endl;
-
     std::uint64_t elements_per_plaintext;
     std::uint64_t num_of_plaintexts;
 
@@ -83,7 +77,6 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
     uint32_t expansion_ratio = 0;
     for (uint32_t i = 0; i < enc_params.coeff_modulus().size(); ++i) {
         double logqi = log2(enc_params.coeff_modulus()[i].value());
-        cout << "PIR: logqi = " << logqi << endl;
         expansion_ratio += ceil(logqi / logt);
     }
 
@@ -96,22 +89,44 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
     pir_params.d = d;                 
     pir_params.expansion_ratio = expansion_ratio << 1;           
     pir_params.nvec = nvec;
-    pir_params.n = num_of_plaintexts;
     pir_params.slot_count = N;
 }
 
 
 void print_pir_params(const PirParams &pir_params){
-    cout << "Pir Params: " << endl;
-    cout << "num_of_elements: " << pir_params.ele_num << endl;
-    cout << "ele_size: " << pir_params.ele_size << endl;
-    cout << "elements_per_plaintext: " << pir_params.elements_per_plaintext << endl;
-    cout << "num_of_plaintexts: " << pir_params.num_of_plaintexts << endl;
-    cout << "dimension: " << pir_params.d << endl;
+    std::uint32_t prod = accumulate(pir_params.nvec.begin(), pir_params.nvec.end(), 1, multiplies<uint64_t>());
+
+    cout << "PIR Parameters" << endl;
+    cout << "number of elements: " << pir_params.ele_num << endl;
+    cout << "element size: " << pir_params.ele_size << endl;
+    cout << "elements per BFV plaintext: " << pir_params.elements_per_plaintext << endl;
+    cout << "dimensions for d-dimensional hyperrectangle: " << pir_params.d << endl;
+    cout << "number of BFV plaintexts (before padding): " << pir_params.num_of_plaintexts << endl;
+    cout << "Number of BFV plaintexts after padding (to fill d-dimensional hyperrectangle): " << prod << endl;
     cout << "expansion ratio: " << pir_params.expansion_ratio << endl;
-    cout << "n: " << pir_params.n << endl;
     cout << "slot count: " << pir_params.slot_count << endl;
+    cout << "=============================="<< endl;
 }
+
+
+void print_seal_params(const EncryptionParameters &enc_params){
+    std::uint32_t N = enc_params.poly_modulus_degree();
+    Modulus t = enc_params.plain_modulus();
+    std::uint32_t logt = floor(log2(t.value()));
+
+    cout << "SEAL encryption parameters"  << endl;
+    cout << "Degree of polynomial modulus (N): " << N << endl;
+    cout << "Size of plaintext modulus (log t):" << logt << endl;
+    cout << "There are " << enc_params.coeff_modulus().size() << " coefficient modulus:" << endl;
+
+    for (uint32_t i = 0; i < enc_params.coeff_modulus().size(); ++i) {
+        double logqi = log2(enc_params.coeff_modulus()[i].value());
+        cout << "Size of coefficient modulus " << i << " (log q_" << i << "): " << logqi << endl;
+    }
+    cout << "=============================="<< endl;
+}
+
+
 
 uint32_t plainmod_after_expansion(uint32_t logt, uint32_t N, uint32_t d, 
         uint64_t ele_num, uint64_t ele_size) {

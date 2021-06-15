@@ -21,7 +21,6 @@ struct PirParams {
     std::uint32_t d;                 // number of dimensions for the database
     std::uint32_t expansion_ratio;           // ratio of ciphertext to plaintext
     std::vector<std::uint64_t> nvec;         // size of each of the d dimensions
-    std::uint32_t n;
     std::uint32_t slot_count;
 };
 
@@ -48,6 +47,7 @@ void gen_params(uint64_t ele_num,
 void verify_encryption_params(const seal::EncryptionParameters &enc_params);
 
 void print_pir_params(const PirParams &pir_params);
+void print_seal_params(const seal::EncryptionParameters &enc_params);
 
 // returns the plaintext modulus after expansion
 std::uint32_t plainmod_after_expansion(std::uint32_t logt, std::uint32_t N, 

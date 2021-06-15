@@ -14,11 +14,11 @@ using namespace seal;
 
 int main(int argc, char *argv[]) {
 
-    uint64_t number_of_items = 1 << 12;
+    uint64_t number_of_items = 1 << 18;
     uint64_t size_per_item = 288; // in bytes
     uint32_t N = 4096;
 
-    // Recommended values: (logt, d) = (12, 2) or (8, 1). 
+    // Recommended values: (logt, d) = (20, 2).
     uint32_t logt = 20; 
     uint32_t d = 2;
 
@@ -38,8 +38,7 @@ int main(int argc, char *argv[]) {
     gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params);
     
     
-    
-    //gen_params(number_of_items, size_per_item, N, logt, d, enc_params, pir_params);
+    print_seal_params(enc_params); 
     print_pir_params(pir_params);
 
     cout << "Main: Initializing the database (this may take some time) ..." << endl;
@@ -69,7 +68,7 @@ int main(int argc, char *argv[]) {
     GaloisKeys galois_keys = client.generate_galois_keys();
 
     // Set galois key for client with id 0
-    cout << "Main: Setting Galois keys...";
+    cout << "Main: Setting Galois keys..." << endl;
     server.set_galois_key(0, galois_keys);
 
     // Measure database setup

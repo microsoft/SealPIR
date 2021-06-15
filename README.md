@@ -8,12 +8,12 @@ a copy of the paper [here](https://eprint.iacr.org/2017/1142.pdf).
 
 # Compiling SEAL
 
-SealPIR depends on [Microsoft SEAL version 3.2.0](https://github.com/microsoft/SEAL/tree/3.2.0).
+SealPIR depends on [Microsoft SEAL version 3.6.5](https://github.com/microsoft/SEAL/tree/3.6.5).
 Install SEAL before compiling SealPIR.
 
 # Compiling SealPIR
 
-Once Microsoft SEAL 3.2.0 is installed, to build SealPIR simply run:
+Once Microsoft SEAL 3.6.5 is installed, to build SealPIR simply run:
 
 	cmake .
 	make
@@ -23,8 +23,9 @@ This should produce a binary file ``bin/sealpir``.
 # Using SealPIR
 
 Take a look at the example in main.cpp for how to use SealPIR. 
-Note: the parameter "d" stands for recursion levels, and for the current configuration, the 
-server-to-client reply has size (pow(10, d-1) * 32) KB. Therefore we recommend using d <= 3.  
+Note: the parameter "d" stands for recursion levels, and for the current 
+configuration, the server-to-client reply has size (pow(10, d-1) * 32) KB. 
+Therefore we recommend using d <= 3.  
 
 # Contributing
 
