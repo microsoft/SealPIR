@@ -14,13 +14,14 @@ using namespace seal;
 
 int main(int argc, char *argv[]) {
 
-    uint64_t number_of_items = 1 << 18;
+    uint64_t number_of_items = 1 << 12;
     uint64_t size_per_item = 288; // in bytes
     uint32_t N = 4096;
 
     // Recommended values: (logt, d) = (20, 2).
     uint32_t logt = 20; 
     uint32_t d = 2;
+    bool use_symmetric = true; // use symmetric encryption instead of public key (recommended)
 
     EncryptionParameters enc_params(scheme_type::bfv);
     PirParams pir_params;
@@ -35,13 +36,30 @@ int main(int argc, char *argv[]) {
     cout << "Main: SEAL parameters are good" << endl;
 
     cout << "Main: Generating PIR parameters" << endl;
-    gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params);
+    gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params, true, true);
     
     
     print_seal_params(enc_params); 
     print_pir_params(pir_params);
 
-    cout << "Main: Initializing the database (this may take some time) ..." << endl;
+
+    // Initialize PIR client....
+    PIRClient client(enc_params, pir_params);
+    cout << "Main: Generating galois keys for client" << endl;
+
+    GaloisKeys galois_keys = client.generate_galois_keys();
+
+    // Initialize PIR Server
+    cout << "Main: Initializing server" << endl;
+    PIRServer server(enc_params, pir_params);
+
+    // Server maps the galois key to client 0. We only have 1 client,
+    // which is why we associate it with 0. If there are multiple PIR
+    // clients, you should have each client generate a galois key, 
+    // and assign each client an index or id, then call the procedure below.
+    server.set_galois_key(0, galois_keys);
+
+    cout << "Main: Creating the database with random data (this may take some time) ..." << endl;
 
     // Create test database
     auto db(make_unique<uint8_t[]>(number_of_items * size_per_item));
@@ -58,18 +76,6 @@ int main(int argc, char *argv[]) {
             db_copy.get()[(i * size_per_item) + j] = val;
         }
     }
-
-    // Initialize PIR Server
-    cout << "Main: Initializing server and client" << endl;
-    PIRServer server(enc_params, pir_params);
-
-    // Initialize PIR client....
-    PIRClient client(enc_params, pir_params);
-    GaloisKeys galois_keys = client.generate_galois_keys();
-
-    // Set galois key for client with id 0
-    cout << "Main: Setting Galois keys..." << endl;
-    server.set_galois_key(0, galois_keys);
 
     // Measure database setup
     auto time_pre_s = high_resolution_clock::now();
@@ -100,15 +106,19 @@ int main(int argc, char *argv[]) {
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
-    PirReply reply = server.generate_reply(query, 0);
+    // Answer PIR query form client 0. If there are multiple clients, 
+    // enter the id of the client (to use the associated galois key).
+    PirReply reply = server.generate_reply(query, 0); 
     auto time_server_e = high_resolution_clock::now();
     auto time_server_us = duration_cast<microseconds>(time_server_e - time_server_s).count();
+    cout << "Main: reply generated" << endl;
 
     // Measure response extraction
     auto time_decode_s = chrono::high_resolution_clock::now();
     vector<uint8_t> elems = client.decode_reply(reply, offset);
     auto time_decode_e = chrono::high_resolution_clock::now();
     auto time_decode_us = duration_cast<microseconds>(time_decode_e - time_decode_s).count();
+    cout << "Main: reply decoded" << endl;
 
     assert(elems.size() == size_per_item);
 

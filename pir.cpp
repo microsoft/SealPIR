@@ -104,6 +104,7 @@ void print_pir_params(const PirParams &pir_params){
     cout << "number of BFV plaintexts (before padding): " << pir_params.num_of_plaintexts << endl;
     cout << "Number of BFV plaintexts after padding (to fill d-dimensional hyperrectangle): " << prod << endl;
     cout << "expansion ratio: " << pir_params.expansion_ratio << endl;
+    cout << "Using symmetric encryption: " << pir_params.enable_symmetric << endl;
     cout << "slot count: " << pir_params.slot_count << endl;
     cout << "=============================="<< endl;
 }
