@@ -30,7 +30,10 @@ void gen_encryption_params(std::uint32_t N, std::uint32_t logt,
     
     enc_params.set_poly_modulus_degree(N);
     enc_params.set_coeff_modulus(CoeffModulus::BFVDefault(N));
-    enc_params.set_plain_modulus(PlainModulus::Batching(N, logt+1));
+    enc_params.set_plain_modulus(PlainModulus::Batching(N, logt+1)); 
+    // the +1 above ensures we get logt bits for each plaintext coefficient. Otherwise
+    // the coefficient modulus t will be logt bits, but only floor(t) = logt-1 (whp) 
+    // will be usable (since we need to ensure that all data in the coefficient is < t).
 }
 
 void verify_encryption_params(const seal::EncryptionParameters &enc_params){
@@ -59,7 +62,7 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
                     bool enable_symmetric, bool enable_batching){
     std::uint32_t N = enc_params.poly_modulus_degree();
     Modulus t = enc_params.plain_modulus();
-    std::uint32_t logt = floor(log2(t.value()));
+    std::uint32_t logt = floor(log2(t.value())); // # of usable bits
     std::uint64_t elements_per_plaintext;
     std::uint64_t num_of_plaintexts;
 
@@ -128,32 +131,9 @@ void print_seal_params(const EncryptionParameters &enc_params){
 }
 
 
-
-uint32_t plainmod_after_expansion(uint32_t logt, uint32_t N, uint32_t d, 
-        uint64_t ele_num, uint64_t ele_size) {
-
-    // Goal: find max logtp such that logtp + ceil(log(ceil(d_root(n)))) <= logt
-    // where n = ceil(ele_num / floor(N*logtp / ele_size *8))
-    for (uint32_t logtp = logt; logtp >= 2; logtp--) {
-
-        uint64_t n = plaintexts_per_db(logtp, N, ele_num, ele_size);
-
-        if (logtp == logt && n == 1) {
-            return logtp - 1;
-        }
-
-        if ((double)logtp + ceil(log2(ceil(pow(n, 1.0/(double)d)))) <= logt) {
-            return logtp;
-        }
-    }
-
-    assert(0); // this should never happen
-    return logt;
-}
-
 // Number of coefficients needed to represent a database element
-uint64_t coefficients_per_element(uint32_t logtp, uint64_t ele_size) {
-    return ceil(8 * ele_size / (double)logtp);
+uint64_t coefficients_per_element(uint32_t logt, uint64_t ele_size) {
+    return ceil(8 * ele_size / (double)logt);
 }
 
 // Number of database elements that can fit in a single FV plaintext
@@ -165,8 +145,8 @@ uint64_t elements_per_ptxt(uint32_t logt, uint64_t N, uint64_t ele_size) {
 }
 
 // Number of FV plaintexts needed to represent the database
-uint64_t plaintexts_per_db(uint32_t logtp, uint64_t N, uint64_t ele_num, uint64_t ele_size) {
-    uint64_t ele_per_ptxt = elements_per_ptxt(logtp, N, ele_size);
+uint64_t plaintexts_per_db(uint32_t logt, uint64_t N, uint64_t ele_num, uint64_t ele_size) {
+    uint64_t ele_per_ptxt = elements_per_ptxt(logt, N, ele_size);
     return ceil((double)ele_num / ele_per_ptxt);
 }
 

@@ -49,20 +49,15 @@ void verify_encryption_params(const seal::EncryptionParameters &enc_params);
 void print_pir_params(const PirParams &pir_params);
 void print_seal_params(const seal::EncryptionParameters &enc_params);
 
-// returns the plaintext modulus after expansion
-std::uint32_t plainmod_after_expansion(std::uint32_t logt, std::uint32_t N, 
-                                       std::uint32_t d, std::uint64_t ele_num,
-                                       std::uint64_t ele_size);
-
 // returns the number of plaintexts that the database can hold
-std::uint64_t plaintexts_per_db(std::uint32_t logtp, std::uint64_t N, std::uint64_t ele_num,
+std::uint64_t plaintexts_per_db(std::uint32_t logt, std::uint64_t N, std::uint64_t ele_num,
                                 std::uint64_t ele_size);
 
 // returns the number of elements that a single FV plaintext can hold
-std::uint64_t elements_per_ptxt(std::uint32_t logtp, std::uint64_t N, std::uint64_t ele_size);
+std::uint64_t elements_per_ptxt(std::uint32_t logt, std::uint64_t N, std::uint64_t ele_size);
 
 // returns the number of coefficients needed to store one element
-std::uint64_t coefficients_per_element(std::uint32_t logtp, std::uint64_t ele_size);
+std::uint64_t coefficients_per_element(std::uint32_t logt, std::uint64_t ele_size);
 
 // Converts an array of bytes to a vector of coefficients, each of which is less
 // than the plaintext modulus

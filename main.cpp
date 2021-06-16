@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     uint32_t N = 4096;
 
     // Recommended values: (logt, d) = (20, 2).
-    uint32_t logt = 20; 
+    uint32_t logt = 20;
     uint32_t d = 2;
     bool use_symmetric = true; // use symmetric encryption instead of public key (recommended)
     bool use_batching = true; // pack as many elements as possible into a BFV plaintext (recommended)
