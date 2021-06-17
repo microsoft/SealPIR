@@ -89,11 +89,13 @@ int main(int argc, char *argv[]) {
         }
         else if(decryption.is_zero()){
             cout << "Found zero where index should be" << endl;
-            return 1;
+            return -1;
         }
-        else{
-            cout << "Plaintext of query vector at index " << index << " should have value 1 (check below)" << endl;
-            cout << "Plaintext of query vector at index " << i << " has value " << decryption.to_string() << endl;
+        else if (std::stoi(decryption.to_string()) != 1) {
+            cout << "Query vector at index " << index << " should be 1 but is instead " << decryption.to_string() << endl;
+            return -1;
+        } else {
+            cout << "Query vector at index " << index << " is " << decryption.to_string() << endl;
         }
     }
 
