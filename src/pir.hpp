@@ -18,7 +18,7 @@ struct PirParams {
     std::uint64_t ele_size;
     std::uint64_t elements_per_plaintext;
     std::uint64_t num_of_plaintexts;         // number of plaintexts in database
-    std::uint32_t d;                 // number of dimensions for the database
+    std::uint32_t d;                         // number of dimensions for the database
     std::uint32_t expansion_ratio;           // ratio of ciphertext to plaintext
     std::vector<std::uint64_t> nvec;         // size of each of the d dimensions
     std::uint32_t slot_count;
@@ -79,14 +79,6 @@ std::vector<std::uint64_t> compute_indices(std::uint64_t desiredIndex,
 
 uint64_t invert_mod(uint64_t m, const seal::Modulus& mod);
 
-// Serialize and deserialize ciphertexts to send them over the network
-PirQuery deserialize_query(std::uint32_t d, uint32_t count, std::string s, std::uint32_t len_ciphertext,
-                                                        std::shared_ptr<seal::SEALContext> context);
-std::vector<seal::Ciphertext> deserialize_ciphertexts(std::uint32_t count, std::string s,
-                                                      std::uint32_t len_ciphertext, std::shared_ptr<seal::SEALContext> context);
-std::string serialize_ciphertexts(std::vector<seal::Ciphertext> c);
-std::string serialize_query(std::vector<std::vector<seal::Ciphertext>> c);
-
 // Serialize and deserialize galois keys to send them over the network
-std::string serialize_galoiskeys(seal::GaloisKeys g);
+std::string serialize_galoiskeys(seal::Serializable<seal::GaloisKeys> g);
 seal::GaloisKeys *deserialize_galoiskeys(std::string s, std::shared_ptr<seal::SEALContext> context);

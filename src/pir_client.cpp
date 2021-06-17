@@ -29,12 +29,52 @@ PIRClient::PIRClient(const EncryptionParameters &enc_params,
     encoder_ = make_unique<BatchEncoder>(*context_);
 }
 
+int PIRClient::generate_serialized_query(uint64_t desiredIndex, std::stringstream &stream) {
+
+    int N = enc_params_.poly_modulus_degree(); 
+    int output_size = 0;
+    indices_ = compute_indices(desiredIndex, pir_params_.nvec);
+    Plaintext pt(enc_params_.poly_modulus_degree());
+
+    for (uint32_t i = 0; i < indices_.size(); i++) {
+        uint32_t num_ptxts = ceil( (pir_params_.nvec[i] + 0.0) / N);
+        // initialize result. 
+        cout << "Client: index " << i + 1  <<  "/ " <<  indices_.size() << " = " << indices_[i] << endl; 
+        cout << "Client: number of ctxts needed for query = " << num_ptxts << endl;
+        
+        for (uint32_t j =0; j < num_ptxts; j++){
+            pt.set_zero();
+            if (indices_[i] >= N*j && indices_[i] <= N*(j+1)){
+                uint64_t real_index = indices_[i] - N*j; 
+                uint64_t n_i = pir_params_.nvec[i];
+                uint64_t total = N; 
+                if (j == num_ptxts - 1){
+                    total = n_i % N; 
+                }
+                uint64_t log_total = ceil(log2(total));
+
+                cout << "Client: Inverting " << pow(2, log_total) << endl;
+                pt[real_index] = invert_mod(pow(2, log_total), enc_params_.plain_modulus());
+            }
+
+            if(pir_params_.enable_symmetric){
+                output_size += encryptor_->encrypt_symmetric(pt).save(stream);
+            }
+            else{
+                output_size += encryptor_->encrypt(pt).save(stream);
+            }
+        }   
+    }
+
+    return output_size;
+}
+
 
 PirQuery PIRClient::generate_query(uint64_t desiredIndex) {
 
     indices_ = compute_indices(desiredIndex, pir_params_.nvec);
 
-    vector<vector<Ciphertext> > result(pir_params_.d);
+    PirQuery result(pir_params_.d);
     int N = enc_params_.poly_modulus_degree(); 
 
     Plaintext pt(enc_params_.poly_modulus_degree());

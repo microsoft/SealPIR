@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     // Recommended values: (logt, d) = (20, 2).
     uint32_t logt = 20;
     uint32_t d = 2;
-    bool use_symmetric = true; // use symmetric encryption instead of public key (recommended)
+    bool use_symmetric = true; // use symmetric encryption instead of public key (recommended for smaller query)
     bool use_batching = true; // pack as many elements as possible into a BFV plaintext (recommended)
 
     EncryptionParameters enc_params(scheme_type::bfv);
@@ -86,7 +86,6 @@ int main(int argc, char *argv[]) {
     auto time_pre_e = high_resolution_clock::now();
     auto time_pre_us = duration_cast<microseconds>(time_pre_e - time_pre_s).count();
 
-
     // Choose an index of an element in the DB
     uint64_t ele_index = rd() % number_of_items; // element in DB at random position
     uint64_t index = client.get_fv_index(ele_index);   // index of FV plaintext
@@ -101,13 +100,27 @@ int main(int argc, char *argv[]) {
     auto time_query_us = duration_cast<microseconds>(time_query_e - time_query_s).count();
     cout << "Main: query generated" << endl;
 
-    //To marshall query to send over the network, you can use serialize/deserialize:
-    //std::string query_ser = serialize_query(query);
-    //PirQuery query2 = deserialize_query(d, 1, query_ser, CIPHER_SIZE);
+    // Measure serialized query generation (useful for sending over the network)
+    stringstream stream;
+    auto time_s_query_s = high_resolution_clock::now();
+    int query_size = client.generate_serialized_query(index, stream);
+    auto time_s_query_e = high_resolution_clock::now();
+    auto time_s_query_us = duration_cast<microseconds>(time_s_query_e - time_s_query_s).count();
+    cout << "Main: serialized query generated" << endl;
+
+    // Measure query deserialization (useful for receiving over the network)
+    auto time_deserial_s = high_resolution_clock::now();
+    PirQuery query2 = server.deserialize_query(stream);
+    auto time_deserial_e = high_resolution_clock::now();
+    auto time_deserial_us = duration_cast<microseconds>(time_deserial_e - time_deserial_s).count();
+    cout << "Main: query deserialized" << endl;
+
+    //XXX: deserialization is not working correctly at the moment. There is likely a bug in either
+    //serialize or deserialize.
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
-    // Answer PIR query form client 0. If there are multiple clients, 
+    // Answer PIR query from client 0. If there are multiple clients, 
     // enter the id of the client (to use the associated galois key).
     PirReply reply = server.generate_reply(query, 0); 
     auto time_server_e = high_resolution_clock::now();
@@ -141,9 +154,11 @@ int main(int argc, char *argv[]) {
     cout << "Main: PIR result correct!" << endl;
     cout << "Main: PIRServer pre-processing time: " << time_pre_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient query generation time: " << time_query_us / 1000 << " ms" << endl;
+    cout << "Main: PIRClient serialized query generation time: " << time_s_query_us / 1000 << " ms" << endl;
     cout << "Main: PIRServer reply generation time: " << time_server_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient answer decode time: " << time_decode_us / 1000 << " ms" << endl;
     cout << "Main: Reply num ciphertexts: " << reply.size() << endl;
+    cout << "Main: Query size: " << query_size << " bytes" << endl;
 
     return 0;
 }

@@ -37,7 +37,7 @@ void PIRServer::set_database(unique_ptr<vector<Plaintext>> &&db) {
     is_db_preprocessed_ = false;
 }
 
-void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes, 
+void PIRServer::set_database(const std::unique_ptr<const uint8_t[]> &bytes, 
     uint64_t ele_num, uint64_t ele_size) {
 
     uint32_t logt = floor(log2(enc_params_.plain_modulus().value()));
@@ -121,8 +121,30 @@ void PIRServer::set_database(const std::unique_ptr<const std::uint8_t[]> &bytes,
     set_database(move(result));
 }
 
-void PIRServer::set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey) {
+void PIRServer::set_galois_key(uint32_t client_id, seal::GaloisKeys galkey) {
     galoisKeys_[client_id] = galkey;
+}
+
+PirQuery PIRServer::deserialize_query(stringstream &stream) {
+    PirQuery q;
+
+    for (uint32_t i; i < pir_params_.d; i++) {
+        // number of ciphertexts needed to encode the index for dimension i
+        // keeping into account that each ciphertext can encode up to poly_modulus_degree indexes
+        // In most cases this is usually 1.
+        uint32_t ctx_per_dimension = ceil((pir_params_.nvec[i] + 0.0) / enc_params_.poly_modulus_degree());
+
+        vector<Ciphertext> cs;
+        for (uint32_t j = 0; j < ctx_per_dimension; j++) {
+          Ciphertext c;
+          c.load(*context_, stream);
+          cs.push_back(c);
+        }
+
+        q.push_back(cs);
+    }
+
+    return q;
 }
 
 PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id) {
