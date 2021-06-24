@@ -141,7 +141,7 @@ PirQuery PIRServer::deserialize_query(stringstream &stream) {
           cs.push_back(c);
         }
 
-        q.push_back(cs);
+        q.emplace(q.begin(), cs);
     }
 
     return q;
