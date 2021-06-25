@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     auto time_server_s = high_resolution_clock::now();
     // Answer PIR query from client 0. If there are multiple clients, 
     // enter the id of the client (to use the associated galois key).
-    PirReply reply = server.generate_reply(query, 0); 
+    PirReply reply = server.generate_reply(query2, 0); 
     auto time_server_e = high_resolution_clock::now();
     auto time_server_us = duration_cast<microseconds>(time_server_e - time_server_s).count();
     cout << "Main: reply generated" << endl;

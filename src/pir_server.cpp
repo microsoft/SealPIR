@@ -128,7 +128,7 @@ void PIRServer::set_galois_key(uint32_t client_id, seal::GaloisKeys galkey) {
 PirQuery PIRServer::deserialize_query(stringstream &stream) {
     PirQuery q;
 
-    for (uint32_t i; i < pir_params_.d; i++) {
+    for (uint32_t i = 0; i < pir_params_.d; i++) {
         // number of ciphertexts needed to encode the index for dimension i
         // keeping into account that each ciphertext can encode up to poly_modulus_degree indexes
         // In most cases this is usually 1.
@@ -141,7 +141,7 @@ PirQuery PIRServer::deserialize_query(stringstream &stream) {
           cs.push_back(c);
         }
 
-        q.emplace(q.begin(), cs);
+        q.push_back(cs);
     }
 
     return q;
