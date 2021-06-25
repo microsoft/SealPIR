@@ -115,9 +115,6 @@ int main(int argc, char *argv[]) {
     auto time_deserial_us = duration_cast<microseconds>(time_deserial_e - time_deserial_s).count();
     cout << "Main: query deserialized" << endl;
 
-    //XXX: deserialization is not working correctly at the moment. There is likely a bug in either
-    //serialize or deserialize.
-
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
     // Answer PIR query from client 0. If there are multiple clients, 
@@ -155,6 +152,7 @@ int main(int argc, char *argv[]) {
     cout << "Main: PIRServer pre-processing time: " << time_pre_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient query generation time: " << time_query_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient serialized query generation time: " << time_s_query_us / 1000 << " ms" << endl;
+    cout << "Main: PIRServer query deserialization time: " << time_deserial_us << " us" << endl;
     cout << "Main: PIRServer reply generation time: " << time_server_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient answer decode time: " << time_decode_us / 1000 << " ms" << endl;
     cout << "Main: Reply num ciphertexts: " << reply.size() << endl;
