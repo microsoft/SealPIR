@@ -14,8 +14,8 @@ class PIRClient {
     PirQuery generate_query(std::uint64_t desiredIndex);
     // Serializes the query into the provided stream and returns number of bytes written
     int generate_serialized_query(std::uint64_t desiredIndex, std::stringstream &stream);
-    seal::Plaintext decode_reply(PirReply reply);
-    std::vector<uint8_t> decode_reply(PirReply reply, uint64_t offset);
+    seal::Plaintext decode_reply(PirReply &reply);
+    std::vector<uint8_t> decode_reply(PirReply &reply, uint64_t offset);
 
     seal::Plaintext decrypt(seal::Ciphertext ct);
 

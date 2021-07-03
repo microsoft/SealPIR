@@ -126,7 +126,7 @@ Plaintext PIRClient::decrypt(Ciphertext ct){
     return pt;
 }
 
-vector<uint8_t> PIRClient::decode_reply(PirReply reply, uint64_t offset){
+vector<uint8_t> PIRClient::decode_reply(PirReply &reply, uint64_t offset){
     Plaintext result = decode_reply(reply);
     
     uint32_t N = enc_params_.poly_modulus_degree(); 
@@ -140,7 +140,7 @@ vector<uint8_t> PIRClient::decode_reply(PirReply reply, uint64_t offset){
     return std::vector<uint8_t>(elems.begin() + offset * pir_params_.ele_size, elems.begin() + (offset + 1) * pir_params_.ele_size);
 }
 
-Plaintext PIRClient::decode_reply(PirReply reply) {
+Plaintext PIRClient::decode_reply(PirReply &reply) {
     uint32_t exp_ratio = pir_params_.expansion_ratio;
     uint32_t recursion_level = pir_params_.d;
 

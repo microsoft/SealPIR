@@ -20,7 +20,9 @@ class PIRServer {
             const seal::Ciphertext &encrypted, std::uint32_t m, uint32_t client_id);
 
     PirQuery deserialize_query(std::stringstream &stream);
-    PirReply generate_reply(PirQuery query, std::uint32_t client_id);
+    PirReply generate_reply(PirQuery &query, std::uint32_t client_id);
+    // Serializes the reply into the provided stream and returns the number of bytes written
+    int serialize_reply(PirReply &reply, std::stringstream &stream);
 
     void set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey);
 
