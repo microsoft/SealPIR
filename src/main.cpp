@@ -101,22 +101,20 @@ int main(int argc, char *argv[]) {
     cout << "Main: query generated" << endl;
 
     // Measure serialized query generation (useful for sending over the network)
-    stringstream stream;
+    stringstream client_stream;
+    stringstream server_stream;
     auto time_s_query_s = high_resolution_clock::now();
-    int query_size = client.generate_serialized_query(index, stream);
+    int query_size = client.generate_serialized_query(index, client_stream);
     auto time_s_query_e = high_resolution_clock::now();
     auto time_s_query_us = duration_cast<microseconds>(time_s_query_e - time_s_query_s).count();
     cout << "Main: serialized query generated" << endl;
 
     // Measure query deserialization (useful for receiving over the network)
     auto time_deserial_s = high_resolution_clock::now();
-    PirQuery query2 = server.deserialize_query(stream);
+    PirQuery query2 = server.deserialize_query(client_stream);
     auto time_deserial_e = high_resolution_clock::now();
     auto time_deserial_us = duration_cast<microseconds>(time_deserial_e - time_deserial_s).count();
     cout << "Main: query deserialized" << endl;
-
-    //XXX: deserialization is not working correctly at the moment. There is likely a bug in either
-    //serialize or deserialize.
 
     // Measure query processing (including expansion)
     auto time_server_s = high_resolution_clock::now();
@@ -126,6 +124,9 @@ int main(int argc, char *argv[]) {
     auto time_server_e = high_resolution_clock::now();
     auto time_server_us = duration_cast<microseconds>(time_server_e - time_server_s).count();
     cout << "Main: reply generated" << endl;
+
+    // Serialize reply (useful for sending over the network)
+    int reply_size = server.serialize_reply(reply, server_stream);
 
     // Measure response extraction
     auto time_decode_s = chrono::high_resolution_clock::now();
@@ -155,10 +156,12 @@ int main(int argc, char *argv[]) {
     cout << "Main: PIRServer pre-processing time: " << time_pre_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient query generation time: " << time_query_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient serialized query generation time: " << time_s_query_us / 1000 << " ms" << endl;
+    cout << "Main: PIRServer query deserialization time: " << time_deserial_us << " us" << endl;
     cout << "Main: PIRServer reply generation time: " << time_server_us / 1000 << " ms" << endl;
     cout << "Main: PIRClient answer decode time: " << time_decode_us / 1000 << " ms" << endl;
-    cout << "Main: Reply num ciphertexts: " << reply.size() << endl;
     cout << "Main: Query size: " << query_size << " bytes" << endl;
+    cout << "Main: Reply num ciphertexts: " << reply.size() << endl;
+    cout << "Main: Reply size: " << reply_size << " bytes" << endl;
 
     return 0;
 }

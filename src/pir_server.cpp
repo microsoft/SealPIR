@@ -147,7 +147,15 @@ PirQuery PIRServer::deserialize_query(stringstream &stream) {
     return q;
 }
 
-PirReply PIRServer::generate_reply(PirQuery query, uint32_t client_id) {
+int PIRServer::serialize_reply(PirReply &reply, stringstream &stream) {
+  int output_size = 0;
+  for (int i = 0; i < reply.size(); i++){
+    output_size += reply[i].save(stream);
+  }
+  return output_size;
+}
+
+PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
 
     vector<uint64_t> nvec = pir_params_.nvec;
     uint64_t product = 1;

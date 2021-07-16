@@ -6,10 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/home/andrew/Documents/Research/AC-PIR/SealPIR/src/pir.cpp
-pir.hpp
-/home/andrew/Documents/Research/AC-PIR/SealPIR/src/pir.hpp
-
 /home/andrew/Documents/Research/AC-PIR/SealPIR/src/pir.hpp
 seal/seal.h
 /home/andrew/Documents/Research/AC-PIR/SealPIR/src/seal/seal.h
