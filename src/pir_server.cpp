@@ -461,3 +461,17 @@ vector<Plaintext> PIRServer::decompose_to_plaintexts(const Ciphertext &encrypted
 
     return result;
 }
+
+Ciphertext PIRServer::simple_query(uint64_t index){
+    //There is no transform_from_ntt that takes a plaintext
+    Ciphertext ct;
+    Plaintext pt = db_->operator[](index);
+    evaluator_->multiply_plain(one_, pt, ct);
+    evaluator_->transform_from_ntt_inplace(ct);
+    return ct;
+}
+
+void PIRServer::set_one_ct(Ciphertext one){
+    one_ = one;
+    evaluator_->transform_to_ntt_inplace(one_);
+}

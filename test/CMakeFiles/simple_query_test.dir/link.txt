@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/simple_query_test.dir/simple_query_test.cpp.o  -o ../bin/simple_query_test  ../src/libsealpir.a /usr/local/lib/libseal-3.6.a -pthread 

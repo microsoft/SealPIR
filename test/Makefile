@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -88,6 +77,17 @@ test:
 test/fast: test
 
 .PHONY : test/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -120,6 +120,21 @@ preinstall/fast:
 depend:
 	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+# Convenience name for target.
+test/CMakeFiles/simple_query_test.dir/rule:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/simple_query_test.dir/rule
+.PHONY : test/CMakeFiles/simple_query_test.dir/rule
+
+# Convenience name for target.
+simple_query_test: test/CMakeFiles/simple_query_test.dir/rule
+
+.PHONY : simple_query_test
+
+# fast build rule for target.
+simple_query_test/fast:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/build
+.PHONY : simple_query_test/fast
 
 # Convenience name for target.
 test/CMakeFiles/query_test.dir/rule:
@@ -205,15 +220,43 @@ query_test.cpp.s:
 	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/query_test.cpp.s
 .PHONY : query_test.cpp.s
 
+simple_query_test.o: simple_query_test.cpp.o
+
+.PHONY : simple_query_test.o
+
+# target to build an object file
+simple_query_test.cpp.o:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.o
+.PHONY : simple_query_test.cpp.o
+
+simple_query_test.i: simple_query_test.cpp.i
+
+.PHONY : simple_query_test.i
+
+# target to preprocess a source file
+simple_query_test.cpp.i:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.i
+.PHONY : simple_query_test.cpp.i
+
+simple_query_test.s: simple_query_test.cpp.s
+
+.PHONY : simple_query_test.s
+
+# target to generate assembly for a file
+simple_query_test.cpp.s:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.s
+.PHONY : simple_query_test.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... test"
+	@echo "... rebuild_cache"
+	@echo "... simple_query_test"
 	@echo "... query_test"
 	@echo "... expand_test"
 	@echo "... expand_test.o"
@@ -222,6 +265,9 @@ help:
 	@echo "... query_test.o"
 	@echo "... query_test.i"
 	@echo "... query_test.s"
+	@echo "... simple_query_test.o"
+	@echo "... simple_query_test.i"
+	@echo "... simple_query_test.s"
 .PHONY : help
 
 

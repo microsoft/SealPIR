@@ -24,9 +24,11 @@ class PIRServer {
     // Serializes the reply into the provided stream and returns the number of bytes written
     int serialize_reply(PirReply &reply, std::stringstream &stream);
 
-    seal::Plaintext simple_query(std::uint64_t index, std::uint64_t offset);
-
     void set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey);
+
+    seal::Ciphertext simple_query(std::uint64_t index);
+    //This is only used for simple_query
+    void set_one_ct(seal::Ciphertext one);
 
   private:
     seal::EncryptionParameters enc_params_; // SEAL parameters
@@ -37,6 +39,9 @@ class PIRServer {
     std::unique_ptr<seal::Evaluator> evaluator_;
     std::unique_ptr<seal::BatchEncoder> encoder_;
     std::shared_ptr<seal::SEALContext> context_;
+
+    //This is only uesd for simple_query
+    seal::Ciphertext one_;
 
     void decompose_to_plaintexts_ptr(const seal::Ciphertext &encrypted, seal::Plaintext *plain_ptr, int logt);
     std::vector<seal::Plaintext> decompose_to_plaintexts(const seal::Ciphertext &encrypted);
