@@ -128,17 +128,38 @@ Plaintext PIRClient::decrypt(Ciphertext ct){
 
 vector<uint8_t> PIRClient::decode_reply(PirReply reply, uint64_t offset){
     Plaintext result = decode_reply(reply);
+    return extract_bytes(result, offset);   
+}
+
+vector<uint64_t> PIRClient::extract_coeffs(Plaintext pt){
+    vector<uint64_t> coeffs;
+    encoder_->decode(pt, coeffs);
+    return coeffs;
+}
+
+std::vector<uint64_t> PIRClient::extract_coeffs(seal::Plaintext pt, uint64_t offset){
+    vector<uint64_t> coeffs;
+    encoder_->decode(pt, coeffs);
+
+    uint32_t logt = floor(log2(enc_params_.plain_modulus().value()));
     
+    uint64_t coeffs_per_element = coefficients_per_element(logt, pir_params_.ele_size);
+
+    return std::vector<uint64_t>(coeffs.begin() + offset * coeffs_per_element, coeffs.begin() + (offset + 1) * coeffs_per_element);
+}
+
+std::vector<uint8_t> PIRClient::extract_bytes(seal::Plaintext pt, uint64_t offset){
     uint32_t N = enc_params_.poly_modulus_degree(); 
     uint32_t logt = floor(log2(enc_params_.plain_modulus().value()));
 
     // Convert from FV plaintext (polynomial) to database element at the client
     vector<uint8_t> elems(N * logt / 8);
     vector<uint64_t> coeffs;
-    encoder_->decode(result, coeffs);
+    encoder_->decode(pt, coeffs);
     coeffs_to_bytes(logt, coeffs, elems.data(), (N * logt) / 8);
     return std::vector<uint8_t>(elems.begin() + offset * pir_params_.ele_size, elems.begin() + (offset + 1) * pir_params_.ele_size);
 }
+
 
 Plaintext PIRClient::decode_reply(PirReply reply) {
     uint32_t exp_ratio = pir_params_.expansion_ratio;

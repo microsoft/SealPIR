@@ -15,7 +15,7 @@ using namespace seal;
 int main(int argc, char *argv[]) {
 
     uint64_t number_of_items = 1 << 12;
-    uint64_t size_per_item = 288; // in bytes
+    uint64_t size_per_item = 256; // in bytes
     uint32_t N = 4096;
 
     // Recommended values: (logt, d) = (20, 2).

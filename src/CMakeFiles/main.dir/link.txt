@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/main.dir/main.cpp.o  -o ../bin/main  libsealpir.a /usr/local/lib/libseal-3.6.a -pthread 

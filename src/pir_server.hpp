@@ -17,10 +17,12 @@ class PIRServer {
     void preprocess_database();
 
     std::vector<seal::Ciphertext> expand_query(
-            const seal::Ciphertext &encrypted, std::uint32_t m, uint32_t client_id);
+            const seal::Ciphertext &encrypted, std::uint32_t m, std::uint32_t client_id);
 
     PirQuery deserialize_query(std::stringstream &stream);
     PirReply generate_reply(PirQuery query, std::uint32_t client_id);
+
+    seal::Plaintext simple_query(std::uint64_t index, std::uint64_t offset);
 
     void set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey);
 
