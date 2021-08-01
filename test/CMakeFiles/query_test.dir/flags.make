@@ -6,5 +6,5 @@ CXX_FLAGS =   -pthread -std=gnu++17
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/andrew/Documents/Research/AC-PIR/SealPIR/src -isystem /usr/local/include/SEAL-3.6 
+CXX_INCLUDES = -I/home/andrew/Documents/Research/AC-PIR/SealPIR2/src -isystem /usr/local/include/SEAL-3.6 
 

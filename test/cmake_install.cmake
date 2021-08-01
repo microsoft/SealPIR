@@ -1,4 +1,4 @@
-# Install script for directory: /home/andrew/Documents/Research/AC-PIR/SealPIR/test
+# Install script for directory: /home/andrew/Documents/Research/AC-PIR/SealPIR2/test
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

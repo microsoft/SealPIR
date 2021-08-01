@@ -65,8 +65,8 @@ std::vector<std::uint64_t> bytes_to_coeffs(std::uint32_t limit, const std::uint8
                                            std::uint64_t size);
 
 // Converts an array of coefficients into an array of bytes
-void coeffs_to_bytes(std::uint32_t logtp, const std::vector<std::uint64_t> &coeffs, std::uint8_t *output,
-                     std::uint32_t size_out);
+void coeffs_to_bytes(std::uint32_t limit, const std::vector<std::uint64_t> &coeffs, std::uint8_t *output, 
+                    std::uint32_t size_out, std::uint32_t ele_size);
 
 // Takes a vector of coefficients and returns the corresponding FV plaintext
 void vector_to_plaintext(const std::vector<std::uint64_t> &coeffs, seal::Plaintext &plain);

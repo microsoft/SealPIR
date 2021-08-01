@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR
+CMAKE_SOURCE_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR
+CMAKE_BINARY_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR2
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -91,14 +91,14 @@ test/fast: test
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR/CMakeFiles /home/andrew/Documents/Research/AC-PIR/SealPIR/src/CMakeFiles/progress.marks
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 src/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR/CMakeFiles 0
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR2/CMakeFiles /home/andrew/Documents/Research/AC-PIR/SealPIR2/src/CMakeFiles/progress.marks
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 src/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 src/clean
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 src/clean
 .PHONY : clean
 
 # The main clean target
@@ -108,22 +108,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/CMakeFiles/main.dir/rule:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/main.dir/rule
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/main.dir/rule
 .PHONY : src/CMakeFiles/main.dir/rule
 
 # Convenience name for target.
@@ -133,12 +133,12 @@ main: src/CMakeFiles/main.dir/rule
 
 # fast build rule for target.
 main/fast:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/build
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/build
 .PHONY : main/fast
 
 # Convenience name for target.
 src/CMakeFiles/sealpir.dir/rule:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/sealpir.dir/rule
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/sealpir.dir/rule
 .PHONY : src/CMakeFiles/sealpir.dir/rule
 
 # Convenience name for target.
@@ -148,7 +148,7 @@ sealpir: src/CMakeFiles/sealpir.dir/rule
 
 # fast build rule for target.
 sealpir/fast:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/build
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/build
 .PHONY : sealpir/fast
 
 main.o: main.cpp.o
@@ -157,7 +157,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/main.cpp.o
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -166,7 +166,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/main.cpp.i
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -175,7 +175,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/main.cpp.s
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 pir.o: pir.cpp.o
@@ -184,7 +184,7 @@ pir.o: pir.cpp.o
 
 # target to build an object file
 pir.cpp.o:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir.cpp.o
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir.cpp.o
 .PHONY : pir.cpp.o
 
 pir.i: pir.cpp.i
@@ -193,7 +193,7 @@ pir.i: pir.cpp.i
 
 # target to preprocess a source file
 pir.cpp.i:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir.cpp.i
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir.cpp.i
 .PHONY : pir.cpp.i
 
 pir.s: pir.cpp.s
@@ -202,7 +202,7 @@ pir.s: pir.cpp.s
 
 # target to generate assembly for a file
 pir.cpp.s:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir.cpp.s
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir.cpp.s
 .PHONY : pir.cpp.s
 
 pir_client.o: pir_client.cpp.o
@@ -211,7 +211,7 @@ pir_client.o: pir_client.cpp.o
 
 # target to build an object file
 pir_client.cpp.o:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_client.cpp.o
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_client.cpp.o
 .PHONY : pir_client.cpp.o
 
 pir_client.i: pir_client.cpp.i
@@ -220,7 +220,7 @@ pir_client.i: pir_client.cpp.i
 
 # target to preprocess a source file
 pir_client.cpp.i:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_client.cpp.i
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_client.cpp.i
 .PHONY : pir_client.cpp.i
 
 pir_client.s: pir_client.cpp.s
@@ -229,7 +229,7 @@ pir_client.s: pir_client.cpp.s
 
 # target to generate assembly for a file
 pir_client.cpp.s:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_client.cpp.s
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_client.cpp.s
 .PHONY : pir_client.cpp.s
 
 pir_server.o: pir_server.cpp.o
@@ -238,7 +238,7 @@ pir_server.o: pir_server.cpp.o
 
 # target to build an object file
 pir_server.cpp.o:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_server.cpp.o
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_server.cpp.o
 .PHONY : pir_server.cpp.o
 
 pir_server.i: pir_server.cpp.i
@@ -247,7 +247,7 @@ pir_server.i: pir_server.cpp.i
 
 # target to preprocess a source file
 pir_server.cpp.i:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_server.cpp.i
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_server.cpp.i
 .PHONY : pir_server.cpp.i
 
 pir_server.s: pir_server.cpp.s
@@ -256,7 +256,7 @@ pir_server.s: pir_server.cpp.s
 
 # target to generate assembly for a file
 pir_server.cpp.s:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_server.cpp.s
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f src/CMakeFiles/sealpir.dir/build.make src/CMakeFiles/sealpir.dir/pir_server.cpp.s
 .PHONY : pir_server.cpp.s
 
 # Help Target
@@ -293,6 +293,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

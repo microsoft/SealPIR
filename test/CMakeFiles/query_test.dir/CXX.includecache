@@ -6,13 +6,13 @@
 
 #IncludeRegexTransform: 
 
-/home/andrew/Documents/Research/AC-PIR/SealPIR/test/query_test.cpp
+/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/query_test.cpp
 pir.hpp
-/home/andrew/Documents/Research/AC-PIR/SealPIR/test/pir.hpp
+/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/pir.hpp
 pir_client.hpp
-/home/andrew/Documents/Research/AC-PIR/SealPIR/test/pir_client.hpp
+/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/pir_client.hpp
 pir_server.hpp
-/home/andrew/Documents/Research/AC-PIR/SealPIR/test/pir_server.hpp
+/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/pir_server.hpp
 seal/seal.h
 -
 chrono

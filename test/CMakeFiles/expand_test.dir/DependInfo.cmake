@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/andrew/Documents/Research/AC-PIR/SealPIR/test/expand_test.cpp" "/home/andrew/Documents/Research/AC-PIR/SealPIR/test/CMakeFiles/expand_test.dir/expand_test.cpp.o"
+  "/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/expand_test.cpp" "/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/CMakeFiles/expand_test.dir/expand_test.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -16,7 +16,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/home/andrew/Documents/Research/AC-PIR/SealPIR/src/CMakeFiles/sealpir.dir/DependInfo.cmake"
+  "/home/andrew/Documents/Research/AC-PIR/SealPIR2/src/CMakeFiles/sealpir.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

@@ -151,12 +151,13 @@ std::vector<uint64_t> PIRClient::extract_coeffs(seal::Plaintext pt, uint64_t off
 std::vector<uint8_t> PIRClient::extract_bytes(seal::Plaintext pt, uint64_t offset){
     uint32_t N = enc_params_.poly_modulus_degree(); 
     uint32_t logt = floor(log2(enc_params_.plain_modulus().value()));
+    uint32_t bytes_per_ptxt = pir_params_.elements_per_plaintext * pir_params_.ele_size;
 
     // Convert from FV plaintext (polynomial) to database element at the client
-    vector<uint8_t> elems(N * logt / 8);
+    vector<uint8_t> elems(bytes_per_ptxt);
     vector<uint64_t> coeffs;
     encoder_->decode(pt, coeffs);
-    coeffs_to_bytes(logt, coeffs, elems.data(), (N * logt) / 8);
+    coeffs_to_bytes(logt, coeffs, elems.data(), bytes_per_ptxt, pir_params_.ele_size);
     return std::vector<uint8_t>(elems.begin() + offset * pir_params_.ele_size, elems.begin() + (offset + 1) * pir_params_.ele_size);
 }
 

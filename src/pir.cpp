@@ -182,24 +182,29 @@ vector<uint64_t> bytes_to_coeffs(uint32_t limit, const uint8_t *bytes, uint64_t 
     return output;
 }
 
-void coeffs_to_bytes(uint32_t limit, const vector<uint64_t> &coeffs, uint8_t *output, uint32_t size_out) {
+void coeffs_to_bytes(uint32_t limit, const vector<uint64_t> &coeffs, uint8_t *output, uint32_t size_out, uint32_t ele_size){
     uint32_t room = 8;
     uint32_t j = 0;
     uint8_t *target = output;
-
+    uint32_t bits_left = ele_size * 8;
     for (uint32_t i = 0; i < coeffs.size(); i++) {
+        if(bits_left == 0){
+            bits_left = ele_size * 8;
+        }
         uint64_t src = coeffs[i];
-        uint32_t rest = limit;
+        uint32_t rest = min(limit, bits_left);
         while (rest && j < size_out) {
             uint32_t shift = rest;
             if (room < rest) {
                 shift = room;
             }
+            
             target[j] = target[j] << shift;
             target[j] = target[j] | (src >> (limit - shift));
             src = src << shift;
             room -= shift;
             rest -= shift;
+            bits_left -= shift;
             if (room == 0) {
                 j++;
                 room = 8;

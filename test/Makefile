@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR
+CMAKE_SOURCE_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR
+CMAKE_BINARY_DIR = /home/andrew/Documents/Research/AC-PIR/SealPIR2
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -91,14 +91,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR/CMakeFiles /home/andrew/Documents/Research/AC-PIR/SealPIR/test/CMakeFiles/progress.marks
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR/CMakeFiles 0
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR2/CMakeFiles /home/andrew/Documents/Research/AC-PIR/SealPIR2/test/CMakeFiles/progress.marks
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/Documents/Research/AC-PIR/SealPIR2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/clean
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/clean
 .PHONY : clean
 
 # The main clean target
@@ -108,22 +108,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 test/CMakeFiles/simple_query_test.dir/rule:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/simple_query_test.dir/rule
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/simple_query_test.dir/rule
 .PHONY : test/CMakeFiles/simple_query_test.dir/rule
 
 # Convenience name for target.
@@ -133,12 +133,12 @@ simple_query_test: test/CMakeFiles/simple_query_test.dir/rule
 
 # fast build rule for target.
 simple_query_test/fast:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/build
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/build
 .PHONY : simple_query_test/fast
 
 # Convenience name for target.
 test/CMakeFiles/query_test.dir/rule:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/query_test.dir/rule
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/query_test.dir/rule
 .PHONY : test/CMakeFiles/query_test.dir/rule
 
 # Convenience name for target.
@@ -148,12 +148,12 @@ query_test: test/CMakeFiles/query_test.dir/rule
 
 # fast build rule for target.
 query_test/fast:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/build
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/build
 .PHONY : query_test/fast
 
 # Convenience name for target.
 test/CMakeFiles/expand_test.dir/rule:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/expand_test.dir/rule
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/expand_test.dir/rule
 .PHONY : test/CMakeFiles/expand_test.dir/rule
 
 # Convenience name for target.
@@ -163,8 +163,50 @@ expand_test: test/CMakeFiles/expand_test.dir/rule
 
 # fast build rule for target.
 expand_test/fast:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/build
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/build
 .PHONY : expand_test/fast
+
+# Convenience name for target.
+test/CMakeFiles/coefficient_conversion_test.dir/rule:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f CMakeFiles/Makefile2 test/CMakeFiles/coefficient_conversion_test.dir/rule
+.PHONY : test/CMakeFiles/coefficient_conversion_test.dir/rule
+
+# Convenience name for target.
+coefficient_conversion_test: test/CMakeFiles/coefficient_conversion_test.dir/rule
+
+.PHONY : coefficient_conversion_test
+
+# fast build rule for target.
+coefficient_conversion_test/fast:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/coefficient_conversion_test.dir/build.make test/CMakeFiles/coefficient_conversion_test.dir/build
+.PHONY : coefficient_conversion_test/fast
+
+coefficient_conversion_test.o: coefficient_conversion_test.cpp.o
+
+.PHONY : coefficient_conversion_test.o
+
+# target to build an object file
+coefficient_conversion_test.cpp.o:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/coefficient_conversion_test.dir/build.make test/CMakeFiles/coefficient_conversion_test.dir/coefficient_conversion_test.cpp.o
+.PHONY : coefficient_conversion_test.cpp.o
+
+coefficient_conversion_test.i: coefficient_conversion_test.cpp.i
+
+.PHONY : coefficient_conversion_test.i
+
+# target to preprocess a source file
+coefficient_conversion_test.cpp.i:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/coefficient_conversion_test.dir/build.make test/CMakeFiles/coefficient_conversion_test.dir/coefficient_conversion_test.cpp.i
+.PHONY : coefficient_conversion_test.cpp.i
+
+coefficient_conversion_test.s: coefficient_conversion_test.cpp.s
+
+.PHONY : coefficient_conversion_test.s
+
+# target to generate assembly for a file
+coefficient_conversion_test.cpp.s:
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/coefficient_conversion_test.dir/build.make test/CMakeFiles/coefficient_conversion_test.dir/coefficient_conversion_test.cpp.s
+.PHONY : coefficient_conversion_test.cpp.s
 
 expand_test.o: expand_test.cpp.o
 
@@ -172,7 +214,7 @@ expand_test.o: expand_test.cpp.o
 
 # target to build an object file
 expand_test.cpp.o:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/expand_test.cpp.o
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/expand_test.cpp.o
 .PHONY : expand_test.cpp.o
 
 expand_test.i: expand_test.cpp.i
@@ -181,7 +223,7 @@ expand_test.i: expand_test.cpp.i
 
 # target to preprocess a source file
 expand_test.cpp.i:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/expand_test.cpp.i
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/expand_test.cpp.i
 .PHONY : expand_test.cpp.i
 
 expand_test.s: expand_test.cpp.s
@@ -190,7 +232,7 @@ expand_test.s: expand_test.cpp.s
 
 # target to generate assembly for a file
 expand_test.cpp.s:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/expand_test.cpp.s
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/expand_test.dir/build.make test/CMakeFiles/expand_test.dir/expand_test.cpp.s
 .PHONY : expand_test.cpp.s
 
 query_test.o: query_test.cpp.o
@@ -199,7 +241,7 @@ query_test.o: query_test.cpp.o
 
 # target to build an object file
 query_test.cpp.o:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/query_test.cpp.o
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/query_test.cpp.o
 .PHONY : query_test.cpp.o
 
 query_test.i: query_test.cpp.i
@@ -208,7 +250,7 @@ query_test.i: query_test.cpp.i
 
 # target to preprocess a source file
 query_test.cpp.i:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/query_test.cpp.i
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/query_test.cpp.i
 .PHONY : query_test.cpp.i
 
 query_test.s: query_test.cpp.s
@@ -217,7 +259,7 @@ query_test.s: query_test.cpp.s
 
 # target to generate assembly for a file
 query_test.cpp.s:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/query_test.cpp.s
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/query_test.dir/build.make test/CMakeFiles/query_test.dir/query_test.cpp.s
 .PHONY : query_test.cpp.s
 
 simple_query_test.o: simple_query_test.cpp.o
@@ -226,7 +268,7 @@ simple_query_test.o: simple_query_test.cpp.o
 
 # target to build an object file
 simple_query_test.cpp.o:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.o
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.o
 .PHONY : simple_query_test.cpp.o
 
 simple_query_test.i: simple_query_test.cpp.i
@@ -235,7 +277,7 @@ simple_query_test.i: simple_query_test.cpp.i
 
 # target to preprocess a source file
 simple_query_test.cpp.i:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.i
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.i
 .PHONY : simple_query_test.cpp.i
 
 simple_query_test.s: simple_query_test.cpp.s
@@ -244,7 +286,7 @@ simple_query_test.s: simple_query_test.cpp.s
 
 # target to generate assembly for a file
 simple_query_test.cpp.s:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.s
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(MAKE) -f test/CMakeFiles/simple_query_test.dir/build.make test/CMakeFiles/simple_query_test.dir/simple_query_test.cpp.s
 .PHONY : simple_query_test.cpp.s
 
 # Help Target
@@ -259,6 +301,10 @@ help:
 	@echo "... simple_query_test"
 	@echo "... query_test"
 	@echo "... expand_test"
+	@echo "... coefficient_conversion_test"
+	@echo "... coefficient_conversion_test.o"
+	@echo "... coefficient_conversion_test.i"
+	@echo "... coefficient_conversion_test.s"
 	@echo "... expand_test.o"
 	@echo "... expand_test.i"
 	@echo "... expand_test.s"
@@ -279,6 +325,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/andrew/Documents/Research/AC-PIR/SealPIR && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/andrew/Documents/Research/AC-PIR/SealPIR2 && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

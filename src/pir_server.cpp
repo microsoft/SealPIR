@@ -66,6 +66,10 @@ void PIRServer::set_database(const std::unique_ptr<const uint8_t[]> &bytes,
     uint64_t coeff_per_ptxt = ele_per_ptxt * coefficients_per_element(logt, ele_size);
     assert(coeff_per_ptxt <= N);
 
+    cout << "Elements per plaintext: " << ele_per_ptxt << endl;
+    cout << "Coeff per ptxt: " << coeff_per_ptxt << endl;
+    cout << "Bytes per plaintext: " << bytes_per_ptxt << endl;
+
     uint32_t offset = 0;
 
     for (uint64_t i = 0; i < num_of_plaintexts; i++) {
@@ -81,7 +85,12 @@ void PIRServer::set_database(const std::unique_ptr<const uint8_t[]> &bytes,
         }
 
         // Get the coefficients of the elements that will be packed in plaintext i
-        vector<uint64_t> coefficients = bytes_to_coeffs(logt, bytes.get() + offset, process_bytes);
+        vector<uint64_t> coefficients(coeff_per_ptxt);
+        for(uint64_t ele = 0; ele < ele_per_ptxt; ele++){
+            vector<uint64_t> element_coeffs = bytes_to_coeffs(logt, bytes.get() + offset + (ele_size*ele), ele_size);
+            std::copy(element_coeffs.begin(), element_coeffs.end(), coefficients.begin() + (coefficients_per_element(logt, ele_size) * ele));
+        }
+         
         offset += process_bytes;
 
         uint64_t used = coefficients.size();

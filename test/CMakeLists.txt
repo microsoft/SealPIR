@@ -1,5 +1,9 @@
 include_directories (${SealPIR_SOURCE_DIR}/src)
 
+add_executable(coefficient_conversion_test coefficient_conversion_test.cpp)
+target_link_libraries(coefficient_conversion_test sealpir)
+add_test(NAME coefficient_conversion_test COMMAND coefficient_conversion_test)
+
 add_executable(expand_test expand_test.cpp)
 target_link_libraries(expand_test sealpir)
 add_test(NAME expand_test COMMAND expand_test)

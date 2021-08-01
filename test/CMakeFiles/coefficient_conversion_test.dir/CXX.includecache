@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/expand_test.cpp
+/home/andrew/Documents/Research/AC-PIR/SealPIR2/test/coefficient_conversion_test.cpp
 pir.hpp
 /home/andrew/Documents/Research/AC-PIR/SealPIR2/test/pir.hpp
 pir_client.hpp
@@ -24,6 +24,8 @@ random
 cstdint
 -
 cstddef
+-
+bitset
 -
 
 /usr/local/include/SEAL-3.6/gsl/gsl_assert
