@@ -11,3 +11,7 @@ add_test(NAME query_test COMMAND query_test)
 add_executable(simple_query_test simple_query_test.cpp)
 target_link_libraries(simple_query_test sealpir)
 add_test(NAME simple_query_test COMMAND simple_query_test)
+
+add_executable(replace_test replace_test.cpp)
+target_link_libraries(replace_test sealpir)
+add_test(NAME replace_test COMMAND replace_test)

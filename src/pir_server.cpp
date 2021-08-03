@@ -61,6 +61,7 @@ void PIRServer::set_database(const std::unique_ptr<const uint8_t[]> &bytes,
     uint64_t ele_per_ptxt = pir_params_.elements_per_plaintext;
     uint64_t bytes_per_ptxt = ele_per_ptxt * ele_size;
 
+    cout << "Bytes per ptxt: " << bytes_per_ptxt << endl;
     uint64_t db_size = ele_num * ele_size;
 
     uint64_t coeff_per_ptxt = ele_per_ptxt * coefficients_per_element(logt, ele_size);
@@ -79,13 +80,18 @@ void PIRServer::set_database(const std::unique_ptr<const uint8_t[]> &bytes,
         } else {
             process_bytes = bytes_per_ptxt;
         }
+        cout << "Process bytes: " << process_bytes << endl;
 
         // Get the coefficients of the elements that will be packed in plaintext i
-        vector<uint64_t> coefficients = bytes_to_coeffs(logt, bytes.get() + offset, process_bytes);
+        vector<uint64_t> coefficients;
+        for(int j = 0; j < process_bytes; j += ele_size){
+            vector<uint64_t> to_add = bytes_to_coeffs(logt, bytes.get() + offset + j, ele_size);
+            coefficients.insert(coefficients.end(),to_add.begin(),to_add.end());
+        } 
         offset += process_bytes;
 
         uint64_t used = coefficients.size();
-
+        cout << "Used: " << used << endl;
         assert(used <= coeff_per_ptxt);
 
         // Pad the rest with 1s
@@ -460,6 +466,14 @@ vector<Plaintext> PIRServer::decompose_to_plaintexts(const Ciphertext &encrypted
     }
 
     return result;
+}
+
+void PIRServer::simple_set(uint64_t index, Plaintext pt){
+    if(is_db_preprocessed_){
+        evaluator_->transform_to_ntt_inplace(
+                pt, context_->first_parms_id());
+    }
+    db_->operator[](index) = pt;
 }
 
 Ciphertext PIRServer::simple_query(uint64_t index){

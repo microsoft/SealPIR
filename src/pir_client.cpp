@@ -276,6 +276,26 @@ Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
     return result;
 }
 
+Plaintext PIRClient::replace_element(Plaintext pt, vector<uint64_t> new_element, uint64_t offset){
+    vector<uint64_t> coeffs = extract_coeffs(pt);
+    
+    uint32_t logt = floor(log2(enc_params_.plain_modulus().value()));
+    uint64_t coeffs_per_element = coefficients_per_element(logt, pir_params_.ele_size);
+
+    assert(new_element.size() == coeffs_per_element);
+
+    for(uint64_t i = 0; i < coeffs_per_element; i++){
+        cout << "Replacing " << coeffs[i + offset * coeffs_per_element];
+        cout << " with " << new_element[i] << endl;
+        coeffs[i + offset * coeffs_per_element] = new_element[i];
+    }
+    
+    Plaintext new_pt;
+
+    encoder_->encode(coeffs, new_pt);
+    return new_pt;
+}
+
 Ciphertext PIRClient::get_one(){
     Plaintext pt("1");
     Ciphertext ct;
