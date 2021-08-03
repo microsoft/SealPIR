@@ -26,6 +26,7 @@ class PIRServer {
 
     void set_galois_key(std::uint32_t client_id, seal::GaloisKeys galkey);
 
+    void simple_set(std::uint64_t index, seal::Plaintext pt);
     seal::Ciphertext simple_query(std::uint64_t index);
     //This is only used for simple_query
     void set_one_ct(seal::Ciphertext one);

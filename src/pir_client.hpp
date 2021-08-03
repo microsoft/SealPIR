@@ -34,6 +34,8 @@ class PIRClient {
     // Only used for simple_query
     seal::Ciphertext get_one();
 
+    seal::Plaintext replace_element(seal::Plaintext pt, std::vector<std::uint64_t> new_element, std::uint64_t offset);
+
 
   private:
     seal::EncryptionParameters enc_params_;
