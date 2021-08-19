@@ -298,6 +298,11 @@ Plaintext PIRClient::replace_element(Plaintext pt, vector<uint64_t> new_element,
 Ciphertext PIRClient::get_one(){
     Plaintext pt("1");
     Ciphertext ct;
-    encryptor_->encrypt(pt, ct);
+    if(pir_params_.enable_symmetric){
+        encryptor_->encrypt_symmetric(pt, ct);
+    }
+    else{
+        encryptor_->encrypt(pt, ct);
+    }
     return ct;
 }
