@@ -6,25 +6,48 @@ revealing which element was downloaded. SealPIR was introduced at
 the Symposium on Security and Privacy (Oakland) in 2018. You can find
 a copy of the paper [here](https://eprint.iacr.org/2017/1142.pdf).
 
+This is a newer version of SealPIR that uses the latest version of SEAL
+and provides better serialization/deserialization of queries and responses,
+and a more streamlined code base. A drawback of this version is that ciphertexts 
+are slightly larger (due to specifics with SEAL).
+
+If you wish to use the **original** version of SealPIR which uses an older version 
+of SEAL and **has smaller ciphertexts**, check out the 
+[original](https://github.com/microsoft/SealPIR/tree/ccf86c50fd3291) branch in this 
+repository.
+
 # Compiling SEAL
 
-SealPIR depends on [Microsoft SEAL version 3.2.0](https://github.com/microsoft/SEAL/tree/3.2.0).
+SealPIR depends on [Microsoft SEAL version 3.6.6](https://github.com/microsoft/SEAL/tree/3.6.6).
 Install SEAL before compiling SealPIR.
 
 # Compiling SealPIR
 
-Once Microsoft SEAL 3.2.0 is installed, to build SealPIR simply run:
+Once Microsoft SEAL 3.6.6 is installed, to build SealPIR simply run:
 
-	cmake .
-	make
+```
+cmake .
+make
+```
 	
-This should produce a binary file ``bin/sealpir``.
+This should produce a binary file ``bin/main``.
+
+# Testing SealPIR
+
+Once you have compiled SealPIR, you can test that everything is working
+correctly by running:
+
+```
+ctest
+```
 
 # Using SealPIR
 
-Take a look at the example in main.cpp for how to use SealPIR. 
-Note: the parameter "d" stands for recursion levels, and for the current configuration, the 
-server-to-client reply has size (pow(10, d-1) * 32) KB. Therefore we recommend using d <= 3.  
+Take a look at the example in `src/main.cpp` for how to use SealPIR. 
+You can also look at the tests in the `test` folder.
+Note: the parameter "d" stands for recursion levels, and for the current 
+configuration, the server-to-client reply has size (pow(10, d-1) * 32) KB. 
+Therefore we recommend using d <= 3.  
 
 # Contributing
 

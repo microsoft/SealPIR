@@ -329,11 +329,16 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
+*.vscode
+
 # CMake files.
+*/CMakeFiles/
 /CMakeCache.txt
 /CMakeFiles/
 /Makefile
 /cmake_install.cmake
+*/Makefile
+*/*.cmake
 
 # Built targets.
 libsealpir.a
