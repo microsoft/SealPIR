@@ -18,11 +18,20 @@ int main(int argc, char *argv[]) {
     // Quick check
     assert(query_test(1 << 10, 288, 4096, 20, 1) == 0);
 
+    assert(query_test(1 << 10, 288, 4096, 20, 2) == 0);
+
+    assert(query_test(1 << 10, 288, 4096, 20, 3) == 0);
+
+    assert(query_test(1 << 10, 288, 8192, 20, 2) == 0);
+
+
     // Forces ciphertext expansion to be the same as the degree
     assert(query_test(1 << 20, 288, 4096, 20, 1) == 0);
 
     
     assert(query_test(1 << 20, 288, 4096, 20, 2) == 0);
+
+    
 }
 
 

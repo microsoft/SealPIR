@@ -35,7 +35,7 @@ class PIRClient {
     seal::Ciphertext get_one();
 
     seal::Plaintext replace_element(seal::Plaintext pt, std::vector<std::uint64_t> new_element, std::uint64_t offset);
-
+   
 
   private:
     seal::EncryptionParameters enc_params_;
@@ -51,7 +51,6 @@ class PIRClient {
     vector<uint64_t> indices_; // the indices for retrieval. 
     vector<uint64_t> inverse_scales_; 
 
-    seal::Ciphertext compose_to_ciphertext(std::vector<seal::Plaintext> plains);
 
     friend class PIRServer;
 };

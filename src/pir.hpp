@@ -79,6 +79,17 @@ std::vector<std::uint64_t> compute_indices(std::uint64_t desiredIndex,
 
 uint64_t invert_mod(uint64_t m, const seal::Modulus& mod);
 
+uint32_t compute_expansion_ratio(seal::EncryptionParameters params);
+std::vector<seal::Plaintext> decompose_to_plaintexts(seal::EncryptionParameters params,
+    const seal::Ciphertext& ct);
+
+//We need the returned ciphertext to be initialized by Context so the caller will pass it in
+void compose_to_ciphertext(seal::EncryptionParameters params, 
+    const std::vector<seal::Plaintext>& pts, seal::Ciphertext& ct);
+void compose_to_ciphertext(seal::EncryptionParameters params, 
+    std::vector<seal::Plaintext>::const_iterator pt_iter, seal::Ciphertext& ct);
+
+
 // Serialize and deserialize galois keys to send them over the network
 std::string serialize_galoiskeys(seal::Serializable<seal::GaloisKeys> g);
 seal::GaloisKeys *deserialize_galoiskeys(std::string s, std::shared_ptr<seal::SEALContext> context);

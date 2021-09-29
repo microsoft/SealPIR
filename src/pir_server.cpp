@@ -83,10 +83,12 @@ void PIRServer::set_database(const std::unique_ptr<const uint8_t[]> &bytes,
         } else {
             process_bytes = bytes_per_ptxt;
         }
+        assert(process_bytes % ele_size == 0);
+        uint64_t ele_in_chunk = process_bytes / ele_size;
 
         // Get the coefficients of the elements that will be packed in plaintext i
         vector<uint64_t> coefficients(coeff_per_ptxt);
-        for(uint64_t ele = 0; ele < ele_per_ptxt; ele++){
+        for(uint64_t ele = 0; ele < ele_in_chunk; ele++){
             vector<uint64_t> element_coeffs = bytes_to_coeffs(logt, bytes.get() + offset + (ele_size*ele), ele_size);
             std::copy(element_coeffs.begin(), element_coeffs.end(), coefficients.begin() + (coefficients_per_element(logt, ele_size) * ele));
         }
@@ -189,7 +191,7 @@ PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
         cout << "Server: " << i + 1 << "-th recursion level started " << endl; 
 
 
-        vector<Ciphertext> expanded_query; 
+        vector<Ciphertext> expanded_query;
 
         uint64_t n_i = nvec[i];
         cout << "Server: n_i = " << n_i << endl; 
@@ -197,7 +199,7 @@ PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
         for (uint32_t j = 0; j < query[i].size(); j++){
             uint64_t total = N; 
             if (j == query[i].size() - 1){
-                total = n_i % N;
+                total = n_i % N; 
             }
             cout << "-- expanding one query ctxt into " << total  << " ctxts "<< endl;
             vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id);
@@ -224,7 +226,7 @@ PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
 
         for (uint64_t k = 0; k < product; k++) {
             if ((*cur)[k].is_zero()){
-                cout << k + 1 << "/ " << product <<  "-th ptxt = 0 " << endl; 
+                cout << k + 1 << "/ " << product <<  "-th ptxt = 0 " << endl;
             }
         }
 
@@ -256,21 +258,16 @@ PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
             intermediate_plain.reserve(pir_params_.expansion_ratio * product);
             cur = &intermediate_plain;
 
-            auto tempplain = util::allocate<Plaintext>(
-                pir_params_.expansion_ratio * product,
-                pool, coeff_count);
-
             for (uint64_t rr = 0; rr < product; rr++) {
 
-                decompose_to_plaintexts_ptr(intermediateCtxts[rr],
-                    tempplain.get() + rr * pir_params_.expansion_ratio, logt);
+                vector<Plaintext> plains = decompose_to_plaintexts(context_->first_context_data()->parms(),
+                    intermediateCtxts[rr]);
 
-                for (uint32_t jj = 0; jj < pir_params_.expansion_ratio; jj++) {
-                    auto offset = rr * pir_params_.expansion_ratio + jj;
-                    intermediate_plain.emplace_back(tempplain[offset]);
+                for (uint32_t jj = 0; jj < plains.size(); jj++) {
+                    intermediate_plain.emplace_back(plains[jj]);
                 }
             }
-            product *= pir_params_.expansion_ratio; // multiply by expansion rate.
+            product = intermediate_plain.size(); // multiply by expansion rate.
         }
         cout << "Server: " << i + 1 << "-th recursion level finished " << endl; 
         cout << endl;
@@ -391,84 +388,6 @@ inline void PIRServer::multiply_power_of_X(const Ciphertext &encrypted, Cipherte
                                            destination.data(i) + (j * coeff_count));
         }
     }
-}
-
-inline void PIRServer::decompose_to_plaintexts_ptr(const Ciphertext &encrypted, Plaintext *plain_ptr, int logt) {
-
-    vector<Plaintext> result;
-    auto coeff_count = enc_params_.poly_modulus_degree();
-    auto coeff_mod_count = enc_params_.coeff_modulus().size();
-    auto encrypted_count = encrypted.size();
-
-    uint64_t t1 = 1 << logt;  //  t1 <= t. 
-
-    uint64_t t1minusone =  t1 -1; 
-    // A triple for loop. Going over polys, moduli, and decomposed index.
-
-    for (int i = 0; i < encrypted_count; i++) {
-        const uint64_t *encrypted_pointer = encrypted.data(i);
-        for (int j = 0; j < coeff_mod_count; j++) {
-            // populate one poly at a time.
-            // create a polynomial to store the current decomposition value
-            // which will be copied into the array to populate it at the current
-            // index.
-            double logqj = log2(enc_params_.coeff_modulus()[j].value());
-            //int expansion_ratio = ceil(logqj + exponent - 1) / exponent;
-            int expansion_ratio =  ceil(logqj / logt); 
-            // cout << "local expansion ratio = " << expansion_ratio << endl;
-            uint64_t curexp = 0;
-            for (int k = 0; k < expansion_ratio; k++) {
-                // Decompose here
-                for (int m = 0; m < coeff_count; m++) {
-                    plain_ptr[i * coeff_mod_count * expansion_ratio
-                        + j * expansion_ratio + k][m] =
-                        (*(encrypted_pointer + m + (j * coeff_count)) >> curexp) & t1minusone;
-                }
-                curexp += logt;
-            }
-        }
-    }
-}
-
-vector<Plaintext> PIRServer::decompose_to_plaintexts(const Ciphertext &encrypted) {
-    vector<Plaintext> result;
-    auto coeff_count = enc_params_.poly_modulus_degree();
-    auto coeff_mod_count = enc_params_.coeff_modulus().size();
-    auto plain_bit_count = enc_params_.plain_modulus().bit_count();
-    auto encrypted_count = encrypted.size();
-
-    // Generate powers of t.
-    uint64_t plainMod = enc_params_.plain_modulus().value();
-
-    // A triple for loop. Going over polys, moduli, and decomposed index.
-    for (int i = 0; i < encrypted_count; i++) {
-        const uint64_t *encrypted_pointer = encrypted.data(i);
-        for (int j = 0; j < coeff_mod_count; j++) {
-            // populate one poly at a time.
-            // create a polynomial to store the current decomposition value
-            // which will be copied into the array to populate it at the current
-            // index.
-            int logqj = log2(enc_params_.coeff_modulus()[j].value());
-            int expansion_ratio = ceil(logqj / log2(plainMod));
-
-            // cout << "expansion ratio = " << expansion_ratio << endl;
-            uint64_t cur = 1;
-            for (int k = 0; k < expansion_ratio; k++) {
-                // Decompose here
-                Plaintext temp(coeff_count);
-                transform(encrypted_pointer + (j * coeff_count), 
-                        encrypted_pointer + ((j + 1) * coeff_count), 
-                        temp.data(),
-                        [cur, &plainMod](auto &in) { return (in / cur) % plainMod; }
-                );
-
-                result.emplace_back(move(temp));
-                cur *= plainMod;
-            }
-        }
-    }
-
-    return result;
 }
 
 void PIRServer::simple_set(uint64_t index, Plaintext pt){

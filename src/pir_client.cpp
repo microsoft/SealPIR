@@ -162,10 +162,11 @@ std::vector<uint8_t> PIRClient::extract_bytes(seal::Plaintext pt, uint64_t offse
 }
 
 Plaintext PIRClient::decode_reply(PirReply &reply) {
-    uint32_t exp_ratio = pir_params_.expansion_ratio;
+    uint32_t exp_ratio = compute_expansion_ratio(context_->first_context_data()->parms());
     uint32_t recursion_level = pir_params_.d;
 
     vector<Ciphertext> temp = reply;
+    uint32_t ciphertext_size = temp[0].size();
 
     uint64_t t = enc_params_.plain_modulus().value();
 
@@ -189,9 +190,10 @@ Plaintext PIRClient::decode_reply(PirReply &reply) {
             cout << decryptor_->invariant_noise_budget(temp[j]) << endl;
 #endif
 
-            if ((j + 1) % exp_ratio == 0 && j > 0) {
+            if ((j + 1) % (exp_ratio * ciphertext_size) == 0 && j > 0) {
                 // Combine into one ciphertext.
-                Ciphertext combined = compose_to_ciphertext(tempplain);
+                Ciphertext combined(*context_); 
+                compose_to_ciphertext(context_->first_context_data()->parms(), tempplain, combined);
                 newtemp.push_back(combined);
                 tempplain.clear();
                 // cout << "Client: const term of ciphertext = " << combined[0] << endl; 
@@ -230,51 +232,6 @@ GaloisKeys PIRClient::generate_galois_keys() {
     GaloisKeys gal_keys;
     keygen_->create_galois_keys(galois_elts, gal_keys);
     return gal_keys;
-}
-
-Ciphertext PIRClient::compose_to_ciphertext(vector<Plaintext> plains) {
-    size_t encrypted_count = 2;
-    auto coeff_count = enc_params_.poly_modulus_degree();
-    auto coeff_mod_count = enc_params_.coeff_modulus().size();
-    uint64_t plainMod = enc_params_.plain_modulus().value();
-    int logt = floor(log2(plainMod)); 
-
-    Ciphertext result(*context_);
-    result.resize(encrypted_count);
-
-    // A triple for loop. Going over polys, moduli, and decomposed index.
-    for (int i = 0; i < encrypted_count; i++) {
-        uint64_t *encrypted_pointer = result.data(i);
-
-        for (int j = 0; j < coeff_mod_count; j++) {
-            // populate one poly at a time.
-            // create a polynomial to store the current decomposition value
-            // which will be copied into the array to populate it at the current
-            // index.
-            double logqj = log2(enc_params_.coeff_modulus()[j].value());
-            int expansion_ratio = ceil(logqj / logt);
-            uint64_t cur = 1;
-            // cout << "Client: expansion_ratio = " << expansion_ratio << endl; 
-
-            for (int k = 0; k < expansion_ratio; k++) {
-                // Compose here
-                const uint64_t *plain_coeff =
-                    plains[k + j * (expansion_ratio) + i * (coeff_mod_count * expansion_ratio)]
-                        .data();
-
-                for (int m = 0; m < coeff_count; m++) {
-                    if (k == 0) {
-                        *(encrypted_pointer + m + j * coeff_count) = *(plain_coeff + m) * cur;
-                    } else {
-                        *(encrypted_pointer + m + j * coeff_count) += *(plain_coeff + m) * cur;
-                    }
-                }
-                cur <<= logt;
-            }
-        }
-    }
-
-    return result;
 }
 
 Plaintext PIRClient::replace_element(Plaintext pt, vector<uint64_t> new_element, uint64_t offset){
