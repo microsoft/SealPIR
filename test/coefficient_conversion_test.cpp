@@ -16,8 +16,8 @@ using namespace seal;
 int main(int argc, char *argv[]) {
 
     const uint32_t logt = 16; 
-    uint32_t ele_size = 3;
-    uint32_t num_ele = 3;
+    const uint32_t ele_size = 3;
+    const uint32_t num_ele = 3;
     uint8_t bytes[ele_size * num_ele] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     vector<uint64_t> coeffs;

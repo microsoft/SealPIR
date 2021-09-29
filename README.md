@@ -9,24 +9,37 @@ a copy of the paper [here](https://eprint.iacr.org/2017/1142.pdf).
 This is a newer version of SealPIR that uses the latest version of SEAL
 and provides better serialization/deserialization of queries and responses,
 and a more streamlined code base. A drawback of this version is that ciphertexts 
-are slightly larger (due to specifics with SEAL). If you wish to use the 
-original version of SealPIR which uses an older version of SEAL and has smaller
-ciphertexts, check out the [original](https://github.com/microsoft/SealPIR/tree/original) 
-branch in this repository.
+are slightly larger (due to specifics with SEAL).
+
+If you wish to use the **original** version of SealPIR which uses an older version 
+of SEAL and **has smaller ciphertexts**, check out the 
+[original](https://github.com/microsoft/SealPIR/tree/ccf86c50fd3291) branch in this 
+repository.
 
 # Compiling SEAL
 
-SealPIR depends on [Microsoft SEAL version 3.6.5](https://github.com/microsoft/SEAL/tree/3.6.5).
+SealPIR depends on [Microsoft SEAL version 3.6.6](https://github.com/microsoft/SEAL/tree/3.6.6).
 Install SEAL before compiling SealPIR.
 
 # Compiling SealPIR
 
-Once Microsoft SEAL 3.6.5 is installed, to build SealPIR simply run:
+Once Microsoft SEAL 3.6.6 is installed, to build SealPIR simply run:
 
-	cmake .
-	make
+```
+cmake .
+make
+```
 	
 This should produce a binary file ``bin/main``.
+
+# Testing SealPIR
+
+Once you have compiled SealPIR, you can test that everything is working
+correctly by running:
+
+```
+ctest
+```
 
 # Using SealPIR
 
