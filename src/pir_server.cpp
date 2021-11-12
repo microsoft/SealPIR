@@ -159,11 +159,12 @@ PirQuery PIRServer::deserialize_query(stringstream &stream) {
 }
 
 int PIRServer::serialize_reply(PirReply &reply, stringstream &stream) {
-  int output_size = 0;
-  for (int i = 0; i < reply.size(); i++){
-    output_size += reply[i].save(stream);
-  }
-  return output_size;
+    int output_size = 0;
+    for (int i = 0; i < reply.size(); i++){
+        evaluator_->mod_switch_to_inplace(reply[i], context_->last_parms_id());
+        output_size += reply[i].save(stream);
+    }
+    return output_size;
 }
 
 PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
@@ -199,7 +200,7 @@ PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
         for (uint32_t j = 0; j < query[i].size(); j++){
             uint64_t total = N; 
             if (j == query[i].size() - 1){
-                total = n_i % N; 
+                total = n_i % N;
             }
             cout << "-- expanding one query ctxt into " << total  << " ctxts "<< endl;
             vector<Ciphertext> expanded_query_part = expand_query(query[i][j], total, client_id);
@@ -259,8 +260,16 @@ PirReply PIRServer::generate_reply(PirQuery &query, uint32_t client_id) {
             cur = &intermediate_plain;
 
             for (uint64_t rr = 0; rr < product; rr++) {
+                EncryptionParameters parms;
+                if(pir_params_.enable_mswitching){
+                    evaluator_->mod_switch_to_inplace(intermediateCtxts[rr], context_->last_parms_id());
+                    parms = context_->last_context_data()->parms();
+                }
+                else{
+                    parms = context_->first_context_data()->parms();
+                }
 
-                vector<Plaintext> plains = decompose_to_plaintexts(context_->first_context_data()->parms(),
+                vector<Plaintext> plains = decompose_to_plaintexts(parms,
                     intermediateCtxts[rr]);
 
                 for (uint32_t jj = 0; jj < plains.size(); jj++) {

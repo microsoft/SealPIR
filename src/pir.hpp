@@ -14,6 +14,7 @@ typedef std::vector<seal::Ciphertext> PirReply;
 struct PirParams {
     bool enable_symmetric;
     bool enable_batching;
+    bool enable_mswitching;
     std::uint64_t ele_num;
     std::uint64_t ele_size;
     std::uint64_t elements_per_plaintext;
@@ -34,7 +35,8 @@ void gen_pir_params(uint64_t ele_num,
                     const seal::EncryptionParameters &enc_params,
                     PirParams &pir_params,
                     bool enable_symmetric = false,
-                    bool enable_batching = true);
+                    bool enable_batching = true,
+                    bool enable_mswitching = true);
 
 void gen_params(uint64_t ele_num,
                 uint64_t ele_size,

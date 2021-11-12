@@ -162,7 +162,17 @@ std::vector<uint8_t> PIRClient::extract_bytes(seal::Plaintext pt, uint64_t offse
 }
 
 Plaintext PIRClient::decode_reply(PirReply &reply) {
-    uint32_t exp_ratio = compute_expansion_ratio(context_->first_context_data()->parms());
+    EncryptionParameters parms;
+    parms_id_type parms_id;
+    if(pir_params_.enable_mswitching){
+        parms = context_->last_context_data()->parms();
+        parms_id = context_->last_parms_id();
+    }
+    else{
+        parms = context_->first_context_data()->parms();
+        parms_id = context_->first_parms_id();
+    }
+    uint32_t exp_ratio = compute_expansion_ratio(parms);
     uint32_t recursion_level = pir_params_.d;
 
     vector<Ciphertext> temp = reply;
@@ -192,8 +202,8 @@ Plaintext PIRClient::decode_reply(PirReply &reply) {
 
             if ((j + 1) % (exp_ratio * ciphertext_size) == 0 && j > 0) {
                 // Combine into one ciphertext.
-                Ciphertext combined(*context_); 
-                compose_to_ciphertext(context_->first_context_data()->parms(), tempplain, combined);
+                Ciphertext combined(*context_, parms_id); 
+                compose_to_ciphertext(parms, tempplain, combined);
                 newtemp.push_back(combined);
                 tempplain.clear();
                 // cout << "Client: const term of ciphertext = " << combined[0] << endl; 

@@ -59,7 +59,7 @@ void verify_encryption_params(const seal::EncryptionParameters &enc_params){
 
 void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
                     const EncryptionParameters &enc_params, PirParams &pir_params,
-                    bool enable_symmetric, bool enable_batching){
+                    bool enable_symmetric, bool enable_batching, bool enable_mswitching){
     std::uint32_t N = enc_params.poly_modulus_degree();
     Modulus t = enc_params.plain_modulus();
     std::uint32_t logt = floor(log2(t.value())); // # of usable bits
@@ -85,6 +85,7 @@ void gen_pir_params(uint64_t ele_num, uint64_t ele_size, uint32_t d,
 
     pir_params.enable_symmetric = enable_symmetric;
     pir_params.enable_batching = enable_batching;
+    pir_params.enable_mswitching = enable_mswitching;
     pir_params.ele_num = ele_num;
     pir_params.ele_size = ele_size;
     pir_params.elements_per_plaintext = elements_per_plaintext;
@@ -108,6 +109,7 @@ void print_pir_params(const PirParams &pir_params){
     cout << "Number of BFV plaintexts after padding (to fill d-dimensional hyperrectangle): " << prod << endl;
     cout << "expansion ratio: " << pir_params.expansion_ratio << endl;
     cout << "Using symmetric encryption: " << pir_params.enable_symmetric << endl;
+    cout << "Using recursive mod switching: " << pir_params.enable_mswitching << endl;
     cout << "slot count: " << pir_params.slot_count << endl;
     cout << "=============================="<< endl;
 }

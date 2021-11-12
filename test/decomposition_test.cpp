@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
     SecretKey secret_key = keygen.secret_key();
     Encryptor encryptor(context, secret_key);
     Decryptor decryptor(context, secret_key);
+    Evaluator evaluator(context);
     BatchEncoder encoder(context);
     logt = floor(log2(enc_params.plain_modulus().value()));
 
@@ -55,11 +56,17 @@ int main(int argc, char *argv[]) {
     Ciphertext ct;
     encryptor.encrypt_symmetric(pt, ct);
     std::cout << "Encrypting" << std::endl;
-    EncryptionParameters params = context.first_context_data()->parms();
+    auto context_data = context.last_context_data();
+    auto parms_id = context.last_parms_id();
+
+    evaluator.mod_switch_to_inplace(ct, parms_id);
+
+    EncryptionParameters params = context_data->parms();
     std::cout << "Encoding" << std::endl;
     vector<Plaintext> encoded = decompose_to_plaintexts(params, ct);
+    std::cout << "Expansion Factor: " << encoded.size() << std::endl;
     std::cout << "Decoding" << std::endl;
-    Ciphertext decoded(context);
+    Ciphertext decoded(context, parms_id);
     compose_to_ciphertext(params, encoded, decoded);
     std::cout << "Checking" <<std::endl;
     Plaintext pt2;

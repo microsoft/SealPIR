@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
     uint32_t d = 2;
     bool use_symmetric = true; // use symmetric encryption instead of public key (recommended for smaller query)
     bool use_batching = true; // pack as many elements as possible into a BFV plaintext (recommended)
+    bool use_recursive_mod_switching = true;
 
     EncryptionParameters enc_params(scheme_type::bfv);
     PirParams pir_params;
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
     cout << "Main: SEAL parameters are good" << endl;
 
     cout << "Main: Generating PIR parameters" << endl;
-    gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params, use_symmetric, use_batching);
+    gen_pir_params(number_of_items, size_per_item, d, enc_params, pir_params, use_symmetric, use_batching, use_recursive_mod_switching);
     
     
     print_seal_params(enc_params); 
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Measure database setup
-    auto time_pre_s = high_resolution_clock::now();
+    auto time_pre_s = high_resolution_clock::now(); 
     server.set_database(move(db), number_of_items, size_per_item);
     server.preprocess_database();
     cout << "Main: database pre processed " << endl;
