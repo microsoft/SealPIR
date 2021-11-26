@@ -1,4 +1,4 @@
-find_package(SEAL 3.6 REQUIRED)
+find_package(SEAL 3.7.2 REQUIRED)
 
 add_library(sealpir pir.hpp pir.cpp pir_client.hpp pir_client.cpp pir_server.hpp
   pir_server.cpp)

@@ -14,7 +14,7 @@ using namespace seal;
 
 int main(int argc, char *argv[]) {
 
-    uint64_t number_of_items = 1 << 12;
+    uint64_t number_of_items = 1 << 16;
     uint64_t size_per_item = 256; // in bytes
     uint32_t N = 4096;
 
