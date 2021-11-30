@@ -15,7 +15,7 @@ using namespace seal;
 int main(int argc, char *argv[]) {
 
     uint64_t number_of_items = 1 << 16;
-    uint64_t size_per_item = 256; // in bytes
+    uint64_t size_per_item = 1024; // in bytes
     uint32_t N = 4096;
 
     // Recommended values: (logt, d) = (20, 2).
@@ -83,9 +83,9 @@ int main(int argc, char *argv[]) {
     auto time_pre_s = high_resolution_clock::now(); 
     server.set_database(move(db), number_of_items, size_per_item);
     server.preprocess_database();
-    cout << "Main: database pre processed " << endl;
     auto time_pre_e = high_resolution_clock::now();
     auto time_pre_us = duration_cast<microseconds>(time_pre_e - time_pre_s).count();
+    cout << "Main: database pre processed " << endl;
 
     // Choose an index of an element in the DB
     uint64_t ele_index = rd() % number_of_items; // element in DB at random position
