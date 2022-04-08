@@ -8,13 +8,13 @@ a copy of the paper [here](https://eprint.iacr.org/2017/1142.pdf).
 
 # Compiling SEAL
 
-SealPIR depends on [Microsoft SEAL version 3.7.2](https://github.com/microsoft/SEAL/tree/3.7.2).
+SealPIR depends on [Microsoft SEAL version 4.0.0](https://github.com/microsoft/SEAL/tree/4.0.0).
 
 Download and install SEAL (follow the instructions in the above link) before before compiling SealPIR.
 
 # Compiling SealPIR
 
-Once Microsoft SEAL 3.7.2 is installed, to build SealPIR simply run:
+Once Microsoft SEAL 4.0.0 is installed, to build SealPIR simply run:
 
 ```
 cmake .
