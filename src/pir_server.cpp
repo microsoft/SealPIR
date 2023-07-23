@@ -121,7 +121,7 @@ void PIRServer::set_database(const std::unique_ptr<const uint8_t[]> &bytes,
   cout << "adding: " << matrix_plaintexts - current_plaintexts
        << " FV plaintexts of padding (equivalent to: "
        << (matrix_plaintexts - current_plaintexts) *
-              elements_per_ptxt(logtp, N, ele_size)
+              elements_per_ptxt(logt, N, ele_size)
        << " elements)" << endl;
 #endif
 
