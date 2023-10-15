@@ -73,10 +73,11 @@ int main(int argc, char *argv[]) {
   // the correct element.
   auto db_copy(make_unique<uint8_t[]>(number_of_items * size_per_item));
 
-  random_device rd;
+  seal::Blake2xbPRNGFactory factory;
+  auto gen =  factory.create();
   for (uint64_t i = 0; i < number_of_items; i++) {
     for (uint64_t j = 0; j < size_per_item; j++) {
-      uint8_t val = rd() % 256;
+      uint8_t val = gen->generate() % 256;
       db.get()[(i * size_per_item) + j] = val;
       db_copy.get()[(i * size_per_item) + j] = val;
     }
@@ -90,8 +91,9 @@ int main(int argc, char *argv[]) {
   auto time_pre_us =
       duration_cast<microseconds>(time_pre_e - time_pre_s).count();
   cout << "Main: database pre processed " << endl;
-
+  
   // Choose an index of an element in the DB
+  random_device rd;
   uint64_t ele_index =
       rd() % number_of_items; // element in DB at random position
   uint64_t index = client.get_fv_index(ele_index);   // index of FV plaintext
