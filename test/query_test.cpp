@@ -70,10 +70,12 @@ int query_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
   // the correct element.
   auto db_copy(make_unique<uint8_t[]>(number_of_items * size_per_item));
 
-  random_device rd;
+  seal::Blake2xbPRNGFactory factory;
+  auto gen = factory.create();
+
   for (uint64_t i = 0; i < number_of_items; i++) {
     for (uint64_t j = 0; j < size_per_item; j++) {
-      uint8_t val = rd() % 256;
+      uint8_t val = gen->generate() % 256;
       db.get()[(i * size_per_item) + j] = val;
       db_copy.get()[(i * size_per_item) + j] = val;
     }
@@ -100,6 +102,7 @@ int query_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
   auto time_pre_us =
       duration_cast<microseconds>(time_pre_e - time_pre_s).count();
 
+  random_device rd;
   // Choose an index of an element in the DB
   uint64_t ele_index =
       rd() % number_of_items; // element in DB at random position
